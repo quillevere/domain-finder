@@ -87,7 +87,7 @@
   .input-field::placeholder, .input-area::placeholder { color: var(--text-tertiary); }
 
   /* Row with input + small input */
-  .input-row { display: flex; gap: 8px; }
+  .input-row { display: flex; gap: 8px; align-items: center; }
   .input-row .input-field { flex: 1; }
   .input-sm { width: 72px; text-align: center; font-variant-numeric: tabular-nums; flex-shrink: 0; }
 
@@ -276,6 +276,39 @@
   }
   .btn-buy:hover { opacity: 0.85; }
 
+  /* Star / Favorites */
+  .btn-star {
+    background: none; border: none; cursor: pointer; padding: 4px;
+    font-size: 16px; line-height: 1; color: var(--text-tertiary);
+    transition: color 0.15s, transform 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-star:hover { color: var(--accent-amber); }
+  .btn-star.starred { color: var(--accent-amber); transform: scale(1.1); }
+
+  .fav-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .fav-domain { font-family: var(--font-mono); font-size: 14px; color: var(--accent-green); }
+  .fav-context { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+  .fav-actions { display: flex; align-items: center; gap: 6px; }
+  .fav-remove {
+    background: none; border: none; cursor: pointer; color: var(--text-tertiary);
+    font-size: 14px; padding: 4px; transition: color 0.15s;
+  }
+  .fav-remove:hover { color: var(--text-primary); }
+  .fav-empty {
+    text-align: center; padding: 40px 16px; color: var(--text-tertiary); font-size: 13px;
+  }
+  .fav-count {
+    font-size: 11px; font-weight: 500; color: var(--bg-100);
+    background: var(--accent-amber); border-radius: 999px;
+    min-width: 16px; height: 16px; display: inline-flex;
+    align-items: center; justify-content: center; padding: 0 4px;
+  }
+  .fav-count:empty { display: none; }
+
   /* Summary */
   .summary { display: none; margin-top: 20px; padding: 16px; background: var(--bg-200); border: 1px solid var(--border); border-radius: var(--radius-lg); }
   .summary.visible { display: block; }
@@ -351,6 +384,7 @@
   <button class="tab active" data-tab="generate">Generate</button>
   <button class="tab" data-tab="silver">Silver Bullet</button>
   <button class="tab" data-tab="manual">Manual</button>
+  <button class="tab" data-tab="library">Library <span class="fav-count" id="favCountBadge"></span></button>
 </div>
 
 <!-- GENERATE PANEL -->
@@ -435,6 +469,11 @@
     <div class="section-label">Domain names</div>
     <textarea id="namesInput" class="input-area" placeholder="reelm, curioso, wonderly, peekr..." spellcheck="false"></textarea>
   </div>
+</div>
+
+<!-- LIBRARY PANEL -->
+<div class="panel" id="panel-library">
+  <div id="favList"></div>
 </div>
 
 <!-- EXTENSIONS (shared) -->
@@ -623,6 +662,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     tab.classList.add('active');
     $(`panel-${tab.dataset.tab}`).classList.add('active');
+    if (tab.dataset.tab === 'library') renderLibrary();
   });
 });
 
@@ -939,9 +979,15 @@ $('checkBtn').addEventListener('click', async () => {
     const badge = badgeLabels[result.status] || result.status;
     const ovhUrl = `https://porkbun.com/checkout/search?q=${item.domain}`;
     let buyBtn = '';
-    if (result.status === 'available') buyBtn = `<a class="btn-buy" href="${ovhUrl}" target="_blank" rel="noopener">Buy</a>`;
-    else if (result.status === 'maybe') buyBtn = `<a class="btn-buy" href="${ovhUrl}" target="_blank" rel="noopener" style="background:var(--accent-amber)">Check</a>`;
-    row.querySelector('.result-right').innerHTML = `<span class="result-badge">${badge}</span>${buyBtn}`;
+    let star = '';
+    if (result.status === 'available') {
+      buyBtn = `<a class="btn-buy" href="${ovhUrl}" target="_blank" rel="noopener">Buy</a>`;
+      star = starButtonHTML(item.domain, '');
+    } else if (result.status === 'maybe') {
+      buyBtn = `<a class="btn-buy" href="${ovhUrl}" target="_blank" rel="noopener" style="background:var(--accent-amber)">Check</a>`;
+      star = starButtonHTML(item.domain, '');
+    }
+    row.querySelector('.result-right').innerHTML = `<span class="result-badge">${badge}</span>${buyBtn}${star}`;
     if (result.status === 'available') { availCount++; availDomains.push(item); }
     else if (result.status === 'maybe') { maybeCount++; maybeDomains.push(item); }
     $('statChecked').textContent = checked;
@@ -993,6 +1039,76 @@ $('checkBtn').addEventListener('click', async () => {
   $('checkBtn').disabled=false;
   $('checkBtn').textContent='Check availability';
 });
+
+// ═══════════════════════════════════════════════════════
+// Favorites / Library
+// ═══════════════════════════════════════════════════════
+function getFavorites() {
+  try { return JSON.parse(localStorage.getItem('domain_favorites') || '[]'); }
+  catch { return []; }
+}
+
+function saveFavorites(favs) {
+  localStorage.setItem('domain_favorites', JSON.stringify(favs));
+  updateFavBadge();
+}
+
+function isFavorite(domain) {
+  return getFavorites().some(f => f.domain === domain);
+}
+
+function toggleFavorite(domain, context) {
+  let favs = getFavorites();
+  const idx = favs.findIndex(f => f.domain === domain);
+  if (idx >= 0) {
+    favs.splice(idx, 1);
+  } else {
+    favs.unshift({ domain, context: context || '', addedAt: Date.now() });
+  }
+  saveFavorites(favs);
+  // Update all star buttons for this domain
+  document.querySelectorAll(`.btn-star[data-domain="${domain}"]`).forEach(btn => {
+    btn.classList.toggle('starred', isFavorite(domain));
+    btn.textContent = isFavorite(domain) ? '★' : '☆';
+  });
+  renderLibrary();
+}
+
+function updateFavBadge() {
+  const count = getFavorites().length;
+  $('favCountBadge').textContent = count > 0 ? count : '';
+}
+
+function renderLibrary() {
+  const favs = getFavorites();
+  const container = $('favList');
+  if (favs.length === 0) {
+    container.innerHTML = '<div class="fav-empty">No saved domains yet.<br>Star a domain from any results to save it here.</div>';
+    return;
+  }
+  const porkbunLink = d => `https://porkbun.com/checkout/search?q=${d}`;
+  container.innerHTML = favs.map(f => `
+    <div class="fav-row">
+      <div>
+        <div class="fav-domain">${f.domain}</div>
+        ${f.context ? `<div class="fav-context">${f.context}</div>` : ''}
+      </div>
+      <div class="fav-actions">
+        <a class="btn-buy" href="${porkbunLink(f.domain)}" target="_blank" rel="noopener">Buy</a>
+        <button class="fav-remove" onclick="toggleFavorite('${f.domain}','${(f.context||'').replace(/'/g,"\\'")}')" title="Remove">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function starButtonHTML(domain, context) {
+  const starred = isFavorite(domain);
+  const safeCtx = (context || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+  return `<button class="btn-star${starred ? ' starred' : ''}" data-domain="${domain}" onclick="toggleFavorite('${domain}','${safeCtx}')">${starred ? '★' : '☆'}</button>`;
+}
+
+// Init badge
+updateFavBadge();
 
 // ═══════════════════════════════════════════════════════
 // Silver Bullet mode
@@ -1102,7 +1218,7 @@ No markdown, no explanation, just the JSON array.`;
         const row = document.createElement('div');
         row.className = 'result-row available';
         row.style.flexWrap = 'wrap';
-        row.innerHTML = `<span class="result-domain">${a.domain}</span><span class="result-right"><span class="result-badge">available</span><a class="btn-buy" href="${porkbunLink(a.domain)}" target="_blank" rel="noopener">Buy</a></span>${word.context ? `<span style="width:100%;font-size:11px;color:var(--text-tertiary);padding-left:2px;margin-top:-2px;">${word.context}</span>` : ''}`;
+        row.innerHTML = `<span class="result-domain">${a.domain}</span><span class="result-right"><span class="result-badge">available</span><a class="btn-buy" href="${porkbunLink(a.domain)}" target="_blank" rel="noopener">Buy</a>${starButtonHTML(a.domain, word.context)}</span>${word.context ? `<span style="width:100%;font-size:11px;color:var(--text-tertiary);padding-left:2px;margin-top:-2px;">${word.context}</span>` : ''}`;
         $('silverList').appendChild(row);
         $('silverFound').textContent = found.length;
         $('silverProgress').style.width = `${(found.length/target*100).toFixed(0)}%`;
