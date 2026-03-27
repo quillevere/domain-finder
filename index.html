@@ -504,6 +504,7 @@
     <span class="stat"><strong id="statChecked">0</strong> / <span id="statTotal">0</span> checked</span>
   </div>
   <div id="resultsContainer"></div>
+  <p style="font-size:10px;color:var(--text-tertiary);margin-top:12px;">Short dictionary words on .app/.dev/.ai may show as available but be reserved as premium by the registry. Always verify on the registrar before purchasing.</p>
 </div>
 
 <!-- SUMMARY -->
@@ -1137,13 +1138,19 @@ $('silverBtn').addEventListener('click', async () => {
   const found = [];
   let tried = 0;
   let round = 0;
-  const MAX_ROUNDS = 8;
+  let emptyRounds = 0; // consecutive rounds with 0 new words after filtering
+  const MAX_ROUNDS = 20;
   const seenNames = new Set();
   const porkbunLink = d => `https://porkbun.com/checkout/search?q=${d}`;
+  let stoppedReason = '';
 
-  while (found.length < target && round < MAX_ROUNDS) {
+  while (found.length < target && round < MAX_ROUNDS && !stoppedReason) {
     round++;
-    const batchSize = Math.min(30, (target - found.length) * 3);
+    $('silverBtn').textContent = `Searching... (round ${round})`;
+    const batchSize = Math.min(40, (target - found.length) * 4);
+
+    // Small delay between rounds to avoid Gemini rate limits
+    if (round > 1) await new Promise(r => setTimeout(r, 1500));
 
     const silverMinLen = parseInt($('silverMinLen').value) || 4;
     const silverMaxLen = parseInt($('silverMaxLen').value) || 10;
@@ -1184,14 +1191,18 @@ No markdown, no explanation, just the JSON array.`;
           break;
         } catch(e) { continue; }
       }
-      if (!data) break;
+      if (!data) { stoppedReason = 'api_failed'; break; }
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
       const jsonStr = text.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
       words = JSON.parse(jsonStr).map(w => ({
         name: w.name.toLowerCase().replace(/[^a-z0-9]/g, ''),
         context: w.context || ''
       })).filter(w => w.name.length >= silverMinLen && w.name.length <= silverMaxLen && !seenNames.has(w.name));
-    } catch(e) { break; }
+      if (words.length === 0) {
+        emptyRounds++;
+        if (emptyRounds >= 3) { stoppedReason = 'exhausted'; break; }
+      } else { emptyRounds = 0; }
+    } catch(e) { stoppedReason = 'error'; break; }
 
     // Check each word
     for (const word of words) {
@@ -1226,9 +1237,25 @@ No markdown, no explanation, just the JSON array.`;
     }
   }
 
-  if (found.length === 0) {
-    $('silverList').innerHTML = '<p style="color:var(--text-tertiary);font-size:13px;padding:12px 0;">No available domains found. Try a different theme or add more extensions.</p>';
+  // Show completion message
+  const statusEl = document.createElement('p');
+  statusEl.style.cssText = 'font-size:12px;color:var(--text-tertiary);padding:12px 0;border-top:1px solid var(--border);margin-top:8px;';
+  if (found.length >= target) {
+    statusEl.innerHTML = `✓ Found ${found.length} available domains in ${tried} tries (${round} rounds).`;
+  } else if (found.length === 0) {
+    statusEl.innerHTML = `No available domains found in ${tried} tries. Try a broader theme, wider character range, or more extensions.`;
+  } else if (stoppedReason === 'exhausted') {
+    statusEl.innerHTML = `Stopped — ran out of unique names matching your constraints. Found ${found.length}/${target} in ${tried} tries. Try widening the character range.`;
+  } else if (stoppedReason === 'api_failed') {
+    statusEl.innerHTML = `Stopped — Gemini API failed (likely rate limit). Found ${found.length}/${target} in ${tried} tries. Wait a minute and retry.`;
+  } else if (stoppedReason === 'error') {
+    statusEl.innerHTML = `Stopped — error parsing Gemini response. Found ${found.length}/${target} in ${tried} tries.`;
+  } else if (round >= MAX_ROUNDS) {
+    statusEl.innerHTML = `Reached max search depth. Found ${found.length}/${target} in ${tried} tries. Try a different theme or fewer extensions.`;
+  } else {
+    statusEl.innerHTML = `Stopped after ${tried} tries. Found ${found.length}/${target}. Try adjusting your criteria.`;
   }
+  $('silverList').appendChild(statusEl);
 
   $('silverBtn').disabled = false;
   $('silverBtn').textContent = 'Find available domains';
