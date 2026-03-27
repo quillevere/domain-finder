@@ -364,6 +364,20 @@
   </div>
 
   <div class="section">
+    <div class="section-label">Name length <span style="color:var(--text-tertiary);font-weight:400">(without extension)</span></div>
+    <div class="input-row">
+      <input type="number" class="input-field input-sm" id="genMinLen" value="4" min="2" max="20" style="width:100%">
+      <span style="color:var(--text-tertiary);font-size:13px;padding:0 4px;">to</span>
+      <input type="number" class="input-field input-sm" id="genMaxLen" value="10" min="2" max="20" style="width:100%">
+      <span style="color:var(--text-tertiary);font-size:13px;white-space:nowrap;padding-left:4px;">chars</span>
+    </div>
+    <div class="toggle-row" style="margin-top:8px;">
+      <div class="toggle" id="genRealWords"></div>
+      <span class="toggle-label">Real words only (no invented names)</span>
+    </div>
+  </div>
+
+  <div class="section">
     <button class="btn-primary" id="generateBtn">Generate names</button>
   </div>
 
@@ -388,6 +402,19 @@
   <div class="section">
     <div class="section-label">Available domains to find</div>
     <input type="number" class="input-field input-sm" id="silverTarget" value="10" min="1" max="50" style="width:100%">
+  </div>
+  <div class="section">
+    <div class="section-label">Name length <span style="color:var(--text-tertiary);font-weight:400">(without extension)</span></div>
+    <div class="input-row">
+      <input type="number" class="input-field input-sm" id="silverMinLen" value="4" min="2" max="20" style="width:100%">
+      <span style="color:var(--text-tertiary);font-size:13px;padding:0 4px;">to</span>
+      <input type="number" class="input-field input-sm" id="silverMaxLen" value="10" min="2" max="20" style="width:100%">
+      <span style="color:var(--text-tertiary);font-size:13px;white-space:nowrap;padding-left:4px;">chars</span>
+    </div>
+    <div class="toggle-row" style="margin-top:8px;">
+      <div class="toggle" id="silverRealWords"></div>
+      <span class="toggle-label">Real words only (no invented names)</span>
+    </div>
   </div>
   <div class="section">
     <button class="btn-primary" id="silverBtn">Find available domains</button>
@@ -614,15 +641,22 @@ $('generateBtn').addEventListener('click', async () => {
   $('wordListSection').style.display = 'block';
   $('wordList').innerHTML = '<div class="skeleton-line"></div><div class="skeleton-line"></div><div class="skeleton-line"></div>';
 
+  const minLen = parseInt($('genMinLen').value) || 4;
+  const maxLen = parseInt($('genMaxLen').value) || 10;
+  const realWordsOnly = $('genRealWords').classList.contains('active');
+
   const prompt = `Generate exactly ${count} short, brandable domain name ideas around the theme: "${theme}".
 
 Rules:
-- Each name must be a SINGLE word (no spaces, no dots, no hyphens), lowercase, max 12 characters
-- Mix: direct variations, latin/greek roots, portmanteaus, abstract/evocative names, prefix/suffix combos (get, try, my, go + root)
+- Each name must be a SINGLE word (no spaces, no dots, no hyphens), lowercase
+- Name length: minimum ${minLen} characters, maximum ${maxLen} characters
+${realWordsOnly ? '- ONLY use real words that exist in a dictionary (any language: English, French, Latin, Spanish, Italian, Greek, Japanese, etc.). NO invented/portmanteau/made-up words.' : '- Mix: real words, latin/greek roots, portmanteaus, abstract/evocative names, prefix/suffix combos'}
 - Prioritize names that sound good, are memorable, and easy to spell
 - Be creative, unexpected, diverse — avoid repetitive patterns or suffixes
 
-Output ONLY a JSON array of objects: [{"name": "word", "context": "very short note (etymology, meaning, or why it fits)"}]
+For "context": explain the word in a few words — its meaning, etymology, language of origin, cultural reference, or why it fits the theme.
+
+Output ONLY a JSON array of objects: [{"name": "word", "context": "brief explanation"}]
 No markdown, no explanation, just the JSON array.`;
 
   try {
@@ -666,7 +700,7 @@ No markdown, no explanation, just the JSON array.`;
     generatedWords = words.map(w => ({
       name: w.name.toLowerCase().replace(/[^a-z0-9]/g, ''),
       context: w.context || ''
-    })).filter(w => w.name.length > 0);
+    })).filter(w => w.name.length >= minLen && w.name.length <= maxLen);
 
     renderWordList();
   } catch (e) {
@@ -805,6 +839,8 @@ document.addEventListener('click', e => {
 renderExtTrigger();
 
 $('hackToggle').addEventListener('click', function() { this.classList.toggle('active'); });
+$('genRealWords').addEventListener('click', function() { this.classList.toggle('active'); });
+$('silverRealWords').addEventListener('click', function() { this.classList.toggle('active'); });
 
 $('copyBtn').addEventListener('click', () => {
   const domains=[...document.querySelectorAll('.summary-list li')].map(li=>li.textContent).join('\n');
@@ -972,16 +1008,23 @@ $('silverBtn').addEventListener('click', async () => {
     round++;
     const batchSize = Math.min(30, (target - found.length) * 3);
 
+    const silverMinLen = parseInt($('silverMinLen').value) || 4;
+    const silverMaxLen = parseInt($('silverMaxLen').value) || 10;
+    const silverRealWords = $('silverRealWords').classList.contains('active');
+
     const prompt = `Generate exactly ${batchSize} short, brandable domain name ideas around the theme: "${theme}".
 
 Rules:
-- Each name must be a SINGLE word (no spaces, no dots, no hyphens), lowercase, max 12 characters
-- Mix: direct variations, latin/greek roots, portmanteaus, abstract/evocative names
+- Each name must be a SINGLE word (no spaces, no dots, no hyphens), lowercase
+- Name length: minimum ${silverMinLen} characters, maximum ${silverMaxLen} characters
+${silverRealWords ? '- ONLY use real words that exist in a dictionary (any language: English, French, Latin, Spanish, Italian, Greek, Japanese, etc.). NO invented/portmanteau/made-up words.' : '- Mix: real words, latin/greek roots, portmanteaus, abstract/evocative names'}
 - Prioritize names that sound good, are memorable, and easy to spell
 - Be creative, unexpected, diverse — avoid repetitive patterns
 ${seenNames.size > 0 ? `- AVOID these already tried names: ${[...seenNames].slice(-40).join(', ')}` : ''}
 
-Output ONLY a JSON array of objects: [{"name": "word", "context": "very short note"}]
+For "context": explain the word in a few words — its meaning, etymology, language of origin, cultural reference, or why it fits the theme. Be specific and useful.
+
+Output ONLY a JSON array of objects: [{"name": "word", "context": "brief explanation"}]
 No markdown, no explanation, just the JSON array.`;
 
     let words = [];
@@ -1010,7 +1053,7 @@ No markdown, no explanation, just the JSON array.`;
       words = JSON.parse(jsonStr).map(w => ({
         name: w.name.toLowerCase().replace(/[^a-z0-9]/g, ''),
         context: w.context || ''
-      })).filter(w => w.name.length > 0 && !seenNames.has(w.name));
+      })).filter(w => w.name.length >= silverMinLen && w.name.length <= silverMaxLen && !seenNames.has(w.name));
     } catch(e) { break; }
 
     // Check each word
@@ -1037,7 +1080,8 @@ No markdown, no explanation, just the JSON array.`;
         found.push({ domain: a.domain, name: word.name, context: word.context });
         const row = document.createElement('div');
         row.className = 'result-row available';
-        row.innerHTML = `<span class="result-domain">${a.domain}</span><span class="result-right"><span class="result-badge">available</span><a class="btn-buy" href="${porkbunLink(a.domain)}" target="_blank" rel="noopener">Buy</a></span>`;
+        row.style.flexWrap = 'wrap';
+        row.innerHTML = `<span class="result-domain">${a.domain}</span><span class="result-right"><span class="result-badge">available</span><a class="btn-buy" href="${porkbunLink(a.domain)}" target="_blank" rel="noopener">Buy</a></span>${word.context ? `<span style="width:100%;font-size:11px;color:var(--text-tertiary);padding-left:2px;margin-top:-2px;">${word.context}</span>` : ''}`;
         $('silverList').appendChild(row);
         $('silverFound').textContent = found.length;
         $('silverProgress').style.width = `${(found.length/target*100).toFixed(0)}%`;
