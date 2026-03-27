@@ -224,12 +224,25 @@
   .result-row.error .result-badge { color: var(--accent-amber); background: var(--accent-amber-dim); }
   .result-row.checking .result-badge { color: var(--text-tertiary); background: var(--bg-300); }
 
+  .result-right { display: flex; align-items: center; gap: 6px; }
+  .btn-buy {
+    font-size: 11px; font-weight: 600; font-family: var(--font-sans);
+    padding: 3px 10px; border-radius: 999px; border: none; cursor: pointer;
+    background: var(--accent-green); color: var(--bg-100);
+    text-decoration: none; transition: opacity 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-buy:hover { opacity: 0.85; }
+
   /* Summary */
   .summary { display: none; margin-top: 20px; padding: 16px; background: var(--bg-200); border: 1px solid var(--border); border-radius: var(--radius-lg); }
   .summary.visible { display: block; }
   .summary-title { font-size: 13px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
   .summary-list { list-style: none; }
-  .summary-list li { font-family: var(--font-mono); font-size: 13px; color: var(--accent-green); padding: 3px 0; }
+  .summary-list li {
+    font-family: var(--font-mono); font-size: 13px; color: var(--accent-green); padding: 4px 0;
+    display: flex; align-items: center; justify-content: space-between;
+  }
   .summary-group { margin-bottom: 8px; }
   .summary-group-name { font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 4px; }
 
@@ -670,13 +683,17 @@ $('checkBtn').addEventListener('click', async () => {
 
   async function processOne(item) {
     const row = document.createElement('div'); row.className='result-row checking';
-    row.innerHTML=`<span class="result-domain">${item.domain}</span><span class="result-badge"><span class="spinner"></span></span>`;
+    row.innerHTML=`<span class="result-domain">${item.domain}</span><span class="result-right"><span class="result-badge"><span class="spinner"></span></span></span>`;
     if(groups[item.category]) groups[item.category].appendChild(row);
     const result = await checkDomain(item.domain);
     checked++;
     row.className=`result-row ${result.status}`;
     const badge = result.status==='available'?'available':result.status==='taken'?'taken':'error';
-    row.querySelector('.result-badge').textContent = badge + (result.method==='dns'?' ~':'');
+    const methodHint = result.method==='dns'?' ~':'';
+    const buyBtn = result.status==='available'
+      ? `<a class="btn-buy" href="https://www.ovh.com/fr/cgi-bin/newOrder/order.cgi?domainChooser=${item.domain}" target="_blank" rel="noopener">Buy</a>`
+      : '';
+    row.querySelector('.result-right').innerHTML = `<span class="result-badge">${badge}${methodHint}</span>${buyBtn}`;
     if(result.status==='available') { availCount++; availDomains.push(item); }
     $('statChecked').textContent=checked;
     $('statAvail').textContent=availCount;
@@ -703,7 +720,7 @@ $('checkBtn').addEventListener('click', async () => {
     let html = '';
     for (const [name,doms] of Object.entries(byName).sort()) {
       html += `<div class="summary-group"><div class="summary-group-name">${name}</div>`;
-      html += `<ul class="summary-list">${doms.map(d=>`<li>${d}</li>`).join('')}</ul></div>`;
+      html += `<ul class="summary-list">${doms.map(d=>`<li>${d} <a class="btn-buy" href="https://www.ovh.com/fr/cgi-bin/newOrder/order.cgi?domainChooser=${d}" target="_blank" rel="noopener">Buy</a></li>`).join('')}</ul></div>`;
     }
     $('summaryContent').innerHTML = html;
   }
