@@ -538,19 +538,40 @@ function findHacks(name) {
   const hacks = [], n = name.toLowerCase();
   if (n.length > 2) {
     const s = n.slice(-2);
-    if (TLDS_2.has(s) && !RESTRICTED_TLDS.has(s) && n.length > 2)
-      hacks.push({ domain: `${n.slice(0,-2)}.${s}` });
+    const sld = n.slice(0, -2);
+    const minLen = TLD_MIN_LENGTH[s] || 2;
+    if (TLDS_2.has(s) && !RESTRICTED_TLDS.has(s) && sld.length >= minLen)
+      hacks.push({ domain: `${sld}.${s}` });
   }
   if (n.length > 3) {
     const s = n.slice(-3);
-    if (TLDS_3.has(s) && n.length > 3)
-      hacks.push({ domain: `${n.slice(0,-3)}.${s}` });
+    const sld = n.slice(0, -3);
+    const minLen = TLD_MIN_LENGTH[s] || 2;
+    if (TLDS_3.has(s) && sld.length >= minLen)
+      hacks.push({ domain: `${sld}.${s}` });
   }
   return hacks;
 }
 
+// Minimum SLD length required by each registry (characters before the dot)
+const TLD_MIN_LENGTH = {
+  re:3, fr:3, com:3, net:3, org:3, app:3, dev:3, io:3,
+  ai:3, co:3, me:3, tv:3, cc:2, ly:3, to:3, it:3, es:3,
+  de:1, uk:2, eu:2, nl:2, be:2, ch:3, se:3, no:3, fi:3,
+  dk:2, pt:3, pl:3, cz:2, ro:3, rs:2, hr:2,
+};
+
 async function checkDomain(domain) {
-  const tld = domain.split('.').pop();
+  const parts = domain.split('.');
+  const sld = parts[0]; // second-level domain (before the dot)
+  const tld = parts.pop();
+
+  // Check minimum length rule
+  const minLen = TLD_MIN_LENGTH[tld];
+  if (minLen && sld.length < minLen) {
+    return { status: "taken", method: "rule", reason: `min ${minLen} chars for .${tld}` };
+  }
+
   const rdapServer = RDAP_SERVERS[tld];
 
   // Strategy 1: RDAP (authoritative, reliable)
