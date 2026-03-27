@@ -349,6 +349,7 @@
 <!-- TABS -->
 <div class="tabs">
   <button class="tab active" data-tab="generate">Generate</button>
+  <button class="tab" data-tab="silver">Silver Bullet</button>
   <button class="tab" data-tab="manual">Manual</button>
 </div>
 
@@ -375,6 +376,29 @@
       <button class="btn-secondary" id="clearWordsBtn" style="padding: 5px 10px; font-size: 12px;">Clear</button>
       <span class="word-count" id="wordCount"></span>
     </div>
+  </div>
+</div>
+
+<!-- SILVER BULLET PANEL -->
+<div class="panel" id="panel-silver">
+  <div class="section">
+    <div class="section-label">Theme</div>
+    <input type="text" class="input-field" id="silverTheme" placeholder="curiosity, exploration, memory...">
+  </div>
+  <div class="section">
+    <div class="section-label">Available domains to find</div>
+    <input type="number" class="input-field input-sm" id="silverTarget" value="10" min="1" max="50" style="width:100%">
+  </div>
+  <div class="section">
+    <button class="btn-primary" id="silverBtn">Find available domains</button>
+  </div>
+  <div id="silverResults" style="display:none;">
+    <div class="progress-bar"><div class="progress-fill" id="silverProgress"></div></div>
+    <div class="stats-row">
+      <span class="stat stat-available"><strong id="silverFound">0</strong> / <span id="silverGoal">10</span> found</span>
+      <span class="stat"><strong id="silverTried">0</strong> names tried</span>
+    </div>
+    <div id="silverList"></div>
   </div>
 </div>
 
@@ -595,8 +619,8 @@ $('generateBtn').addEventListener('click', async () => {
 Rules:
 - Each name must be a SINGLE word (no spaces, no dots, no hyphens), lowercase, max 12 characters
 - Mix: direct variations, latin/greek roots, portmanteaus, abstract/evocative names, prefix/suffix combos (get, try, my, go + root)
-- Optimize for names whose last 2-3 letters match real TLD extensions (like .re, .es, .er, .it, .io, .al, .am, .is, .at, .in, .me, .to, .do, .ar) — these create domain hacks
-- Be creative, unexpected, memorable
+- Prioritize names that sound good, are memorable, and easy to spell
+- Be creative, unexpected, diverse — avoid repetitive patterns or suffixes
 
 Output ONLY a JSON array of objects: [{"name": "word", "context": "very short note (etymology, meaning, or why it fits)"}]
 No markdown, no explanation, just the JSON array.`;
@@ -856,7 +880,7 @@ $('checkBtn').addEventListener('click', async () => {
     row.className = `result-row ${result.status}`;
     const badgeLabels = { available:'available', taken:'taken', maybe:'unverified', error:'error', unknown:'unknown' };
     const badge = badgeLabels[result.status] || result.status;
-    const ovhUrl = `https://www.ovhcloud.com/fr/order/webcloud/#/webCloud/domain/select?selection=~${item.domain}`;
+    const ovhUrl = `https://porkbun.com/checkout/search?q=${item.domain}`;
     let buyBtn = '';
     if (result.status === 'available') buyBtn = `<a class="btn-buy" href="${ovhUrl}" target="_blank" rel="noopener">Buy</a>`;
     else if (result.status === 'maybe') buyBtn = `<a class="btn-buy" href="${ovhUrl}" target="_blank" rel="noopener" style="background:var(--accent-amber)">Check</a>`;
@@ -883,7 +907,7 @@ $('checkBtn').addEventListener('click', async () => {
 
   if (availDomains.length > 0 || maybeDomains.length > 0) {
     $('summary').classList.add('visible');
-    const ovhLink = d => `https://www.ovhcloud.com/fr/order/webcloud/#/webCloud/domain/select?selection=~${d}`;
+    const ovhLink = d => `https://porkbun.com/checkout/search?q=${d}`;
     let html = '';
 
     if (availDomains.length > 0) {
@@ -911,6 +935,122 @@ $('checkBtn').addEventListener('click', async () => {
 
   $('checkBtn').disabled=false;
   $('checkBtn').textContent='Check availability';
+});
+
+// ═══════════════════════════════════════════════════════
+// Silver Bullet mode
+// ═══════════════════════════════════════════════════════
+$('silverBtn').addEventListener('click', async () => {
+  const theme = $('silverTheme').value.trim();
+  if (!theme) return;
+  const target = parseInt($('silverTarget').value) || 10;
+  const key = getApiKey();
+  if (!key) { $('settingsBtn').click(); showToast('Add your Gemini API key first'); return; }
+
+  const extensions = [...selectedExts];
+  if (extensions.length === 0) { showToast('Select at least one extension'); return; }
+
+  const hacksEnabled = $('hackToggle').classList.contains('active');
+
+  $('silverBtn').disabled = true;
+  $('silverBtn').textContent = 'Searching...';
+  $('silverResults').style.display = 'block';
+  $('silverList').innerHTML = '';
+  $('silverFound').textContent = '0';
+  $('silverGoal').textContent = target;
+  $('silverTried').textContent = '0';
+  $('silverProgress').style.width = '0%';
+
+  const found = [];
+  let tried = 0;
+  let round = 0;
+  const MAX_ROUNDS = 8;
+  const seenNames = new Set();
+  const porkbunLink = d => `https://porkbun.com/checkout/search?q=${d}`;
+
+  while (found.length < target && round < MAX_ROUNDS) {
+    round++;
+    const batchSize = Math.min(30, (target - found.length) * 3);
+
+    const prompt = `Generate exactly ${batchSize} short, brandable domain name ideas around the theme: "${theme}".
+
+Rules:
+- Each name must be a SINGLE word (no spaces, no dots, no hyphens), lowercase, max 12 characters
+- Mix: direct variations, latin/greek roots, portmanteaus, abstract/evocative names
+- Prioritize names that sound good, are memorable, and easy to spell
+- Be creative, unexpected, diverse — avoid repetitive patterns
+${seenNames.size > 0 ? `- AVOID these already tried names: ${[...seenNames].slice(-40).join(', ')}` : ''}
+
+Output ONLY a JSON array of objects: [{"name": "word", "context": "very short note"}]
+No markdown, no explanation, just the JSON array.`;
+
+    let words = [];
+    try {
+      const models = ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.0-flash-lite'];
+      const body = JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 1.2, maxOutputTokens: 4096 }
+      });
+      let data = null;
+      for (const model of models) {
+        try {
+          const resp = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+            { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }
+          );
+          if (resp.ok) { data = await resp.json(); break; }
+          const errBody = await resp.json().catch(() => ({}));
+          if (resp.status === 429 || resp.status === 404) continue;
+          break;
+        } catch(e) { continue; }
+      }
+      if (!data) break;
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const jsonStr = text.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+      words = JSON.parse(jsonStr).map(w => ({
+        name: w.name.toLowerCase().replace(/[^a-z0-9]/g, ''),
+        context: w.context || ''
+      })).filter(w => w.name.length > 0 && !seenNames.has(w.name));
+    } catch(e) { break; }
+
+    // Check each word
+    for (const word of words) {
+      if (found.length >= target) break;
+      seenNames.add(word.name);
+
+      const domainsToCheck = extensions.map(ext => `${word.name}${ext}`);
+      if (hacksEnabled) {
+        for (const h of findHacks(word.name)) domainsToCheck.push(h.domain);
+      }
+
+      const results = await Promise.all(domainsToCheck.map(async d => {
+        const result = await checkDomain(d);
+        return { domain: d, ...result };
+      }));
+
+      tried++;
+      $('silverTried').textContent = tried;
+
+      const available = results.filter(r => r.status === 'available');
+      for (const a of available) {
+        if (found.length >= target) break;
+        found.push({ domain: a.domain, name: word.name, context: word.context });
+        const row = document.createElement('div');
+        row.className = 'result-row available';
+        row.innerHTML = `<span class="result-domain">${a.domain}</span><span class="result-right"><span class="result-badge">available</span><a class="btn-buy" href="${porkbunLink(a.domain)}" target="_blank" rel="noopener">Buy</a></span>`;
+        $('silverList').appendChild(row);
+        $('silverFound').textContent = found.length;
+        $('silverProgress').style.width = `${(found.length/target*100).toFixed(0)}%`;
+      }
+    }
+  }
+
+  if (found.length === 0) {
+    $('silverList').innerHTML = '<p style="color:var(--text-tertiary);font-size:13px;padding:12px 0;">No available domains found. Try a different theme or add more extensions.</p>';
+  }
+
+  $('silverBtn').disabled = false;
+  $('silverBtn').textContent = 'Find available domains';
 });
 
 // Auto-show API modal if no key set
