@@ -13,7 +13,6 @@
     --bg-100: #0a0a0a;
     --bg-200: #111111;
     --bg-300: #191919;
-    --bg-hover: #1a1a1a;
     --border: #262626;
     --border-light: #333333;
     --text-primary: #ededed;
@@ -21,12 +20,9 @@
     --text-tertiary: #666666;
     --accent-green: #00c853;
     --accent-green-dim: rgba(0,200,83,0.08);
-    --accent-green-border: rgba(0,200,83,0.2);
-    --accent-red: #ff4444;
     --accent-amber: #f5a623;
     --accent-amber-dim: rgba(245,166,35,0.08);
     --accent-blue: #0070f3;
-    --accent-blue-dim: rgba(0,112,243,0.08);
     --radius-sm: 6px;
     --radius-md: 8px;
     --radius-lg: 12px;
@@ -35,7 +31,6 @@
   }
 
   html { background: var(--bg-100); color: var(--text-primary); font-family: var(--font-sans); }
-
   body {
     min-height: 100dvh;
     max-width: 640px;
@@ -46,387 +41,297 @@
   }
 
   /* Header */
-  .header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 0 24px;
-  }
-  .header h1 {
-    font-size: 16px;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-  }
+  .header { display: flex; align-items: center; gap: 10px; padding: 8px 0 20px; }
+  .header h1 { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
   .header .badge {
-    font-size: 11px;
-    font-weight: 500;
-    color: var(--text-tertiary);
-    background: var(--bg-300);
-    border: 1px solid var(--border);
-    padding: 2px 8px;
-    border-radius: 999px;
+    font-size: 11px; font-weight: 500; color: var(--text-tertiary);
+    background: var(--bg-300); border: 1px solid var(--border);
+    padding: 2px 8px; border-radius: 999px;
   }
+  .header-right { margin-left: auto; }
 
-  /* Sections */
-  .section {
-    margin-bottom: 20px;
-  }
-  .section-label {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-secondary);
-    margin-bottom: 8px;
-  }
-
-  /* Textarea */
-  .input-area {
-    width: 100%;
-    min-height: 120px;
-    background: var(--bg-100);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    color: var(--text-primary);
-    font-family: var(--font-mono);
-    font-size: 14px;
-    line-height: 1.6;
-    padding: 12px;
-    resize: vertical;
-    outline: none;
-    transition: border-color 0.15s;
-  }
-  .input-area:focus {
-    border-color: var(--border-light);
-  }
-  .input-area::placeholder {
-    color: var(--text-tertiary);
-  }
-
-  /* Extension chips */
-  .chips-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-  .chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-family: var(--font-mono);
-    font-size: 13px;
-    font-weight: 500;
-    padding: 5px 10px;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border);
-    background: var(--bg-200);
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: all 0.15s;
-    user-select: none;
+  /* Tabs */
+  .tabs { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
+  .tab {
+    padding: 8px 16px; font-size: 13px; font-weight: 500; color: var(--text-tertiary);
+    background: none; border: none; cursor: pointer; position: relative;
+    font-family: var(--font-sans); transition: color 0.15s;
     -webkit-tap-highlight-color: transparent;
   }
+  .tab:hover { color: var(--text-secondary); }
+  .tab.active { color: var(--text-primary); }
+  .tab.active::after {
+    content: ''; position: absolute; bottom: -1px; left: 0; right: 0;
+    height: 1px; background: var(--text-primary);
+  }
+
+  /* Panels */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Sections */
+  .section { margin-bottom: 20px; }
+  .section-label { font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 8px; }
+
+  /* Inputs */
+  .input-field, .input-area {
+    width: 100%; background: var(--bg-100); border: 1px solid var(--border);
+    border-radius: var(--radius-md); color: var(--text-primary);
+    font-size: 14px; padding: 10px 12px; outline: none; transition: border-color 0.15s;
+  }
+  .input-field { font-family: var(--font-sans); }
+  .input-area {
+    font-family: var(--font-mono); min-height: 120px; line-height: 1.6; resize: vertical;
+  }
+  .input-field:focus, .input-area:focus { border-color: var(--border-light); }
+  .input-field::placeholder, .input-area::placeholder { color: var(--text-tertiary); }
+
+  /* Row with input + small input */
+  .input-row { display: flex; gap: 8px; }
+  .input-row .input-field { flex: 1; }
+  .input-sm { width: 72px; text-align: center; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+
+  /* API key row */
+  .api-row {
+    display: flex; gap: 8px; align-items: center; margin-bottom: 16px;
+    padding: 10px 12px; background: var(--bg-200); border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+  }
+  .api-row label { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
+  .api-row input {
+    flex: 1; background: none; border: none; color: var(--text-primary);
+    font-family: var(--font-mono); font-size: 13px; outline: none; min-width: 0;
+  }
+  .api-row input::placeholder { color: var(--text-tertiary); }
+  .api-row a {
+    font-size: 11px; color: var(--text-tertiary); text-decoration: none; white-space: nowrap;
+  }
+  .api-row a:hover { color: var(--text-secondary); }
+
+  /* Generated word items */
+  .word-list { display: flex; flex-direction: column; gap: 2px; }
+  .word-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: var(--radius-sm);
+    transition: background 0.15s; animation: fadeIn 0.15s ease;
+  }
+  .word-item:hover { background: var(--bg-200); }
+  .word-name {
+    font-family: var(--font-mono); font-size: 14px; font-weight: 500;
+    color: var(--text-primary); min-width: 100px;
+  }
+  .word-context {
+    font-size: 12px; color: var(--text-tertiary); flex: 1;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .word-remove {
+    width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
+    background: none; border: none; color: var(--text-tertiary); cursor: pointer;
+    border-radius: var(--radius-sm); font-size: 16px; flex-shrink: 0;
+    transition: all 0.15s; -webkit-tap-highlight-color: transparent;
+  }
+  .word-remove:hover { background: var(--bg-300); color: var(--accent-amber); }
+
+  /* Action bar under word list */
+  .word-actions {
+    display: flex; gap: 8px; margin-top: 12px; align-items: center;
+  }
+  .word-count { font-size: 12px; color: var(--text-tertiary); margin-left: auto; font-variant-numeric: tabular-nums; }
+
+  /* Extension chips */
+  .chips-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-family: var(--font-mono); font-size: 13px; font-weight: 500;
+    padding: 5px 10px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border); background: var(--bg-200);
+    color: var(--text-secondary); cursor: pointer; transition: all 0.15s;
+    user-select: none; -webkit-tap-highlight-color: transparent;
+  }
   .chip:hover { border-color: var(--border-light); }
-  .chip.active {
-    background: var(--text-primary);
-    color: var(--bg-100);
-    border-color: var(--text-primary);
-  }
-  .chip-add {
-    border-style: dashed;
-    color: var(--text-tertiary);
-  }
+  .chip.active { background: var(--text-primary); color: var(--bg-100); border-color: var(--text-primary); }
+  .chip-add { border-style: dashed; color: var(--text-tertiary); }
   .chip-add:hover { color: var(--text-secondary); }
 
-  /* Toggle row */
-  .toggle-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 12px;
-  }
+  /* Toggle */
+  .toggle-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
   .toggle {
-    position: relative;
-    width: 36px;
-    height: 20px;
-    background: var(--border);
-    border-radius: 999px;
-    cursor: pointer;
-    transition: background 0.2s;
+    position: relative; width: 36px; height: 20px; background: var(--border);
+    border-radius: 999px; cursor: pointer; transition: background 0.2s;
     -webkit-tap-highlight-color: transparent;
   }
   .toggle.active { background: var(--text-primary); }
   .toggle::after {
-    content: '';
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 16px;
-    height: 16px;
-    background: var(--bg-100);
-    border-radius: 50%;
-    transition: transform 0.2s;
+    content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px;
+    background: var(--bg-100); border-radius: 50%; transition: transform 0.2s;
   }
   .toggle.active::after { transform: translateX(16px); }
-  .toggle-label {
-    font-size: 13px;
-    color: var(--text-secondary);
-  }
+  .toggle-label { font-size: 13px; color: var(--text-secondary); }
 
-  /* Button */
+  /* Buttons */
   .btn-primary {
-    width: 100%;
-    padding: 10px 16px;
-    font-size: 14px;
-    font-weight: 500;
-    font-family: var(--font-sans);
-    color: var(--bg-100);
-    background: var(--text-primary);
-    border: none;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: opacity 0.15s;
-    -webkit-tap-highlight-color: transparent;
+    width: 100%; padding: 10px 16px; font-size: 14px; font-weight: 500;
+    font-family: var(--font-sans); color: var(--bg-100); background: var(--text-primary);
+    border: none; border-radius: var(--radius-md); cursor: pointer;
+    transition: opacity 0.15s; -webkit-tap-highlight-color: transparent;
   }
   .btn-primary:hover { opacity: 0.9; }
   .btn-primary:active { opacity: 0.8; }
-  .btn-primary:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-  }
+  .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
 
   .btn-secondary {
-    padding: 8px 14px;
-    font-size: 13px;
-    font-weight: 500;
-    font-family: var(--font-sans);
-    color: var(--text-secondary);
-    background: var(--bg-200);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: all 0.15s;
+    padding: 8px 14px; font-size: 13px; font-weight: 500;
+    font-family: var(--font-sans); color: var(--text-secondary);
+    background: var(--bg-200); border: 1px solid var(--border);
+    border-radius: var(--radius-md); cursor: pointer; transition: all 0.15s;
     -webkit-tap-highlight-color: transparent;
   }
-  .btn-secondary:hover {
-    border-color: var(--border-light);
-    color: var(--text-primary);
-  }
+  .btn-secondary:hover { border-color: var(--border-light); color: var(--text-primary); }
 
-  /* Progress bar */
-  .progress-bar {
-    width: 100%;
-    height: 2px;
-    background: var(--border);
-    border-radius: 999px;
-    overflow: hidden;
-    margin-bottom: 16px;
-  }
-  .progress-fill {
-    height: 100%;
-    background: var(--text-primary);
-    border-radius: 999px;
-    transition: width 0.3s ease;
-    width: 0%;
-  }
+  /* Progress */
+  .progress-bar { width: 100%; height: 2px; background: var(--border); border-radius: 999px; overflow: hidden; margin-bottom: 16px; }
+  .progress-fill { height: 100%; background: var(--text-primary); border-radius: 999px; transition: width 0.3s ease; width: 0%; }
 
-  /* Stats row */
-  .stats-row {
-    display: flex;
-    gap: 16px;
-    margin-bottom: 12px;
-    font-size: 13px;
-    font-variant-numeric: tabular-nums;
-  }
+  /* Stats */
+  .stats-row { display: flex; gap: 16px; margin-bottom: 12px; font-size: 13px; font-variant-numeric: tabular-nums; }
   .stat { color: var(--text-tertiary); }
   .stat strong { color: var(--text-secondary); font-weight: 600; }
   .stat-available strong { color: var(--accent-green); }
 
   /* Results */
-  .results-section {
-    display: none;
-  }
+  .results-section { display: none; }
   .results-section.visible { display: block; }
 
   .result-group-header {
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-tertiary);
-    padding: 16px 0 6px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 2px;
+    font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--text-tertiary); padding: 16px 0 6px; border-bottom: 1px solid var(--border); margin-bottom: 2px;
   }
-
   .result-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
-    animation: fadeIn 0.2s ease;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); animation: fadeIn 0.2s ease;
   }
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
-  .result-domain {
-    font-family: var(--font-mono);
-    font-size: 14px;
-    font-weight: 400;
-  }
+  .result-domain { font-family: var(--font-mono); font-size: 14px; }
   .result-row.available .result-domain { color: var(--accent-green); }
   .result-row.taken .result-domain { color: var(--text-tertiary); }
   .result-row.error .result-domain { color: var(--accent-amber); }
   .result-row.checking .result-domain { color: var(--text-tertiary); }
 
-  .result-badge {
-    font-size: 11px;
-    font-weight: 500;
-    padding: 2px 8px;
-    border-radius: 999px;
-  }
-  .result-row.available .result-badge {
-    color: var(--accent-green);
-    background: var(--accent-green-dim);
-  }
-  .result-row.taken .result-badge {
-    color: var(--text-tertiary);
-    background: var(--bg-300);
-  }
-  .result-row.error .result-badge {
-    color: var(--accent-amber);
-    background: var(--accent-amber-dim);
-  }
-  .result-row.checking .result-badge {
-    color: var(--text-tertiary);
-    background: var(--bg-300);
-  }
+  .result-badge { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 999px; }
+  .result-row.available .result-badge { color: var(--accent-green); background: var(--accent-green-dim); }
+  .result-row.taken .result-badge { color: var(--text-tertiary); background: var(--bg-300); }
+  .result-row.error .result-badge { color: var(--accent-amber); background: var(--accent-amber-dim); }
+  .result-row.checking .result-badge { color: var(--text-tertiary); background: var(--bg-300); }
 
   /* Summary */
-  .summary {
-    display: none;
-    margin-top: 20px;
-    padding: 16px;
-    background: var(--bg-200);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-  }
+  .summary { display: none; margin-top: 20px; padding: 16px; background: var(--bg-200); border: 1px solid var(--border); border-radius: var(--radius-lg); }
   .summary.visible { display: block; }
-  .summary-title {
-    font-size: 13px;
-    font-weight: 600;
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .summary-list {
-    list-style: none;
-  }
-  .summary-list li {
-    font-family: var(--font-mono);
-    font-size: 13px;
-    color: var(--accent-green);
-    padding: 3px 0;
-  }
-  .summary-group {
-    margin-bottom: 8px;
-  }
-  .summary-group-name {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text-secondary);
-    margin-bottom: 4px;
-  }
+  .summary-title { font-size: 13px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+  .summary-list { list-style: none; }
+  .summary-list li { font-family: var(--font-mono); font-size: 13px; color: var(--accent-green); padding: 3px 0; }
+  .summary-group { margin-bottom: 8px; }
+  .summary-group-name { font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 4px; }
 
-  /* Add extension modal */
+  /* Modal */
   .modal-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.6);
-    z-index: 100;
-    align-items: flex-end;
-    justify-content: center;
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+    z-index: 100; align-items: flex-end; justify-content: center;
   }
   .modal-overlay.visible { display: flex; }
   .modal {
-    background: var(--bg-200);
-    border: 1px solid var(--border);
+    background: var(--bg-200); border: 1px solid var(--border);
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-    padding: 20px 16px;
-    width: 100%;
-    max-width: 640px;
-    max-height: 50dvh;
+    padding: 20px 16px; width: 100%; max-width: 640px;
   }
-  .modal-title {
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 12px;
-  }
+  .modal-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
   .modal-input {
-    width: 100%;
-    padding: 10px 12px;
-    font-family: var(--font-mono);
-    font-size: 14px;
-    background: var(--bg-100);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    color: var(--text-primary);
-    outline: none;
-    margin-bottom: 12px;
+    width: 100%; padding: 10px 12px; font-family: var(--font-mono); font-size: 14px;
+    background: var(--bg-100); border: 1px solid var(--border); border-radius: var(--radius-md);
+    color: var(--text-primary); outline: none; margin-bottom: 12px;
   }
   .modal-input:focus { border-color: var(--border-light); }
-  .modal-actions {
-    display: flex;
-    gap: 8px;
-    justify-content: flex-end;
-  }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
 
   /* Spinner */
   .spinner {
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    border: 2px solid var(--border);
-    border-top-color: var(--text-secondary);
-    border-radius: 50%;
-    animation: spin 0.6s linear infinite;
+    display: inline-block; width: 12px; height: 12px;
+    border: 2px solid var(--border); border-top-color: var(--text-secondary);
+    border-radius: 50%; animation: spin 0.6s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
   /* Toast */
   .toast {
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
+    position: fixed; bottom: 24px; left: 50%;
     transform: translateX(-50%) translateY(100px);
-    background: var(--text-primary);
-    color: var(--bg-100);
-    font-size: 13px;
-    font-weight: 500;
-    padding: 8px 16px;
-    border-radius: var(--radius-md);
-    transition: transform 0.3s ease;
-    z-index: 200;
+    background: var(--text-primary); color: var(--bg-100);
+    font-size: 13px; font-weight: 500; padding: 8px 16px;
+    border-radius: var(--radius-md); transition: transform 0.3s ease; z-index: 200;
   }
   .toast.visible { transform: translateX(-50%) translateY(0); }
+
+  /* Generating skeleton */
+  .skeleton-line {
+    height: 36px; background: var(--bg-200); border-radius: var(--radius-sm);
+    margin-bottom: 4px; animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.8; } }
+  .skeleton-line:nth-child(2) { width: 90%; }
+  .skeleton-line:nth-child(3) { width: 75%; }
 </style>
 </head>
 <body>
 
 <div class="header">
   <h1>Domain Finder</h1>
-  <span class="badge">RDAP</span>
+  <span class="badge">RDAP + Gemini</span>
+  <div class="header-right">
+    <button class="btn-secondary" id="settingsBtn" style="padding: 4px 10px; font-size: 12px;">API Key</button>
+  </div>
 </div>
 
-<!-- INPUT ZONE -->
-<div class="section">
-  <div class="section-label">Domain names</div>
-  <textarea id="namesInput" class="input-area" placeholder="reelm, curioso, wonderly, peekr..." spellcheck="false"></textarea>
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" data-tab="generate">Generate</button>
+  <button class="tab" data-tab="manual">Manual</button>
 </div>
 
+<!-- GENERATE PANEL -->
+<div class="panel active" id="panel-generate">
+  <div class="section">
+    <div class="section-label">Theme</div>
+    <div class="input-row">
+      <input type="text" class="input-field" id="themeInput" placeholder="curiosity, exploration, memory...">
+      <input type="number" class="input-field input-sm" id="countInput" value="30" min="5" max="100">
+    </div>
+  </div>
+
+  <div class="section">
+    <button class="btn-primary" id="generateBtn">Generate names</button>
+  </div>
+
+  <!-- Generated words list -->
+  <div class="section" id="wordListSection" style="display:none;">
+    <div class="section-label">Generated names</div>
+    <div class="word-list" id="wordList"></div>
+    <div class="word-actions">
+      <button class="btn-secondary" id="selectAllBtn" style="padding: 5px 10px; font-size: 12px;">Select all</button>
+      <button class="btn-secondary" id="clearWordsBtn" style="padding: 5px 10px; font-size: 12px;">Clear</button>
+      <span class="word-count" id="wordCount"></span>
+    </div>
+  </div>
+</div>
+
+<!-- MANUAL PANEL -->
+<div class="panel" id="panel-manual">
+  <div class="section">
+    <div class="section-label">Domain names</div>
+    <textarea id="namesInput" class="input-area" placeholder="reelm, curioso, wonderly, peekr..." spellcheck="false"></textarea>
+  </div>
+</div>
+
+<!-- EXTENSIONS (shared) -->
 <div class="section">
   <div class="section-label">Extensions</div>
   <div class="chips-row" id="chipsRow">
@@ -446,7 +351,7 @@
   <button class="btn-primary" id="checkBtn">Check availability</button>
 </div>
 
-<!-- RESULTS ZONE -->
+<!-- RESULTS -->
 <div class="results-section" id="resultsSection">
   <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
   <div class="stats-row">
@@ -477,227 +382,269 @@
   </div>
 </div>
 
+<!-- API KEY MODAL -->
+<div class="modal-overlay" id="apiModalOverlay">
+  <div class="modal">
+    <div class="modal-title">Gemini API Key</div>
+    <p style="font-size: 12px; color: var(--text-tertiary); margin-bottom: 12px;">
+      Free, no credit card required. Stored locally in your browser only.
+    </p>
+    <input class="modal-input" id="apiKeyInput" placeholder="AIza..." type="password">
+    <div style="font-size: 11px; margin-bottom: 12px;">
+      <a href="https://aistudio.google.com/apikey" target="_blank" style="color: var(--accent-blue); text-decoration: none;">Get a free API key from Google AI Studio &rarr;</a>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="apiModalCancel">Cancel</button>
+      <button class="btn-primary" id="apiModalSave" style="width:auto; padding: 8px 20px;">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
 <script>
 // ═══════════════════════════════════════════════════════
-// TLD database for domain hack detection
+// TLD database
 // ═══════════════════════════════════════════════════════
-
-const TLDS_2 = new Set([
-  "ac","ad","ae","af","ag","ai","al","am","ao","ar","as","at","au","aw","ax","az",
-  "ba","bb","bd","be","bf","bg","bh","bi","bj","bm","bn","bo","br","bs","bt","bw","by","bz",
-  "ca","cc","cd","cf","cg","ch","ci","ck","cl","cm","cn","co","cr","cu","cv","cw","cx","cy","cz",
-  "de","dj","dk","dm","do","dz","ec","ee","eg","er","es","et","eu",
-  "fi","fj","fm","fo","fr","ga","gd","ge","gf","gg","gh","gi","gl","gm","gn","gp","gq","gr",
-  "gs","gt","gu","gw","gy","hk","hn","hr","ht","hu","id","ie","il","im","in","io","iq","ir","is","it",
-  "je","jm","jo","jp","ke","kg","kh","ki","km","kn","kr","kw","ky","kz",
-  "la","lb","lc","li","lk","lr","ls","lt","lu","lv","ly","ma","mc","md","me","mg","mh","mk","ml",
-  "mm","mn","mo","mp","mq","mr","ms","mt","mu","mv","mw","mx","my","mz",
-  "na","nc","ne","nf","ng","ni","nl","no","np","nr","nu","nz","om",
-  "pa","pe","pf","pg","ph","pk","pl","pm","pn","pr","ps","pt","pw","py","qa",
-  "re","ro","rs","ru","rw","sa","sb","sc","sd","se","sg","sh","si","sk","sl","sm","sn","so","sr","ss","st",
-  "su","sv","sx","sy","sz","tc","td","tf","tg","th","tj","tk","tl","tm","tn","to","tr","tt","tv","tw","tz",
-  "ua","ug","uk","us","uy","uz","va","vc","ve","vg","vi","vn","vu","wf","ws","ye","za","zm","zw"
-]);
-
-const TLDS_3 = new Set([
-  "app","art","bar","bet","bid","bio","biz","boo","bot","box","buy","cab","cam","car","cat",
-  "ceo","com","day","dev","dog","dot","eat","eco","edu","esq","fan","fit","fly","foo","fox",
-  "fun","fyi","gal","gay","gov","hot","how","icu","inc","ing","ink","ist","jot","joy",
-  "kim","lat","law","lds","llc","lol","ltd","man","map","mba","med","men","moe","moi","mom",
-  "mov","net","new","nfl","ngo","now","ooo","org","ovh","pay","pet","pin","pro","pub",
-  "red","ren","rio","rip","run","sap","sex","ski","sky","soy","spa","tab","tax","tel","top",
-  "vet","vin","vip","wed","win","wow","wtf","xyz","you","zip"
-]);
+const TLDS_2 = new Set(["ac","ad","ae","af","ag","ai","al","am","ao","ar","as","at","au","aw","ax","az","ba","bb","bd","be","bf","bg","bh","bi","bj","bm","bn","bo","br","bs","bt","bw","by","bz","ca","cc","cd","cf","cg","ch","ci","ck","cl","cm","cn","co","cr","cu","cv","cw","cx","cy","cz","de","dj","dk","dm","do","dz","ec","ee","eg","er","es","et","eu","fi","fj","fm","fo","fr","ga","gd","ge","gf","gg","gh","gi","gl","gm","gn","gp","gq","gr","gs","gt","gu","gw","gy","hk","hn","hr","ht","hu","id","ie","il","im","in","io","iq","ir","is","it","je","jm","jo","jp","ke","kg","kh","ki","km","kn","kr","kw","ky","kz","la","lb","lc","li","lk","lr","ls","lt","lu","lv","ly","ma","mc","md","me","mg","mh","mk","ml","mm","mn","mo","mp","mq","mr","ms","mt","mu","mv","mw","mx","my","mz","na","nc","ne","nf","ng","ni","nl","no","np","nr","nu","nz","om","pa","pe","pf","pg","ph","pk","pl","pm","pn","pr","ps","pt","pw","py","qa","re","ro","rs","ru","rw","sa","sb","sc","sd","se","sg","sh","si","sk","sl","sm","sn","so","sr","ss","st","su","sv","sx","sy","sz","tc","td","tf","tg","th","tj","tk","tl","tm","tn","to","tr","tt","tv","tw","tz","ua","ug","uk","us","uy","uz","va","vc","ve","vg","vi","vn","vu","wf","ws","ye","za","zm","zw"]);
+const TLDS_3 = new Set(["app","art","bar","bet","bid","bio","biz","boo","bot","box","buy","cab","cam","car","cat","ceo","com","day","dev","dog","dot","eat","eco","edu","esq","fan","fit","fly","foo","fox","fun","fyi","gal","gay","gov","hot","how","icu","inc","ing","ink","ist","jot","joy","kim","lat","law","lds","llc","lol","ltd","man","map","mba","med","men","moe","moi","mom","mov","net","new","nfl","ngo","now","ooo","org","ovh","pay","pet","pin","pro","pub","red","ren","rio","rip","run","sap","sex","ski","sky","soy","spa","tab","tax","tel","top","vet","vin","vip","wed","win","wow","wtf","xyz","you","zip"]);
 
 // ═══════════════════════════════════════════════════════
-// RDAP servers (verified CORS * support)
+// RDAP servers
 // ═══════════════════════════════════════════════════════
-
 const RDAP_SERVERS = {
-  com: "https://rdap.verisign.com/com/v1/domain/",
-  net: "https://rdap.verisign.com/net/v1/domain/",
-  org: "https://rdap.org/domain/",
-  app: "https://pubapi.registry.google/rdap/domain/",
-  dev: "https://pubapi.registry.google/rdap/domain/",
-  fr:  "https://rdap.nic.fr/domain/",
-  ai:  "https://rdap.identitydigital.services/rdap/domain/",
-  cc:  "https://rdap.verisign.com/cc/v1/domain/",
-  tv:  "https://rdap.verisign.com/tv/v1/domain/",
-  ly:  "https://rdap.nic.ly/domain/",
-  to:  "https://rdap.tonicregistry.to/rdap/domain/",
-  xyz: "https://rdap.centralnic.com/xyz/domain/",
-  re:  "https://rdap.nic.fr/domain/",
-  es:  "https://rdap.nic.es/domain/",
-  de:  "https://rdap.denic.de/domain/",
-  eu:  "https://rdap.eu/domain/",
-  uk:  "https://rdap.nominet.uk/uk/domain/",
+  com:"https://rdap.verisign.com/com/v1/domain/", net:"https://rdap.verisign.com/net/v1/domain/",
+  org:"https://rdap.org/domain/", app:"https://pubapi.registry.google/rdap/domain/",
+  dev:"https://pubapi.registry.google/rdap/domain/", fr:"https://rdap.nic.fr/domain/",
+  ai:"https://rdap.identitydigital.services/rdap/domain/", cc:"https://rdap.verisign.com/cc/v1/domain/",
+  tv:"https://rdap.verisign.com/tv/v1/domain/", ly:"https://rdap.nic.ly/domain/",
+  to:"https://rdap.tonicregistry.to/rdap/domain/", xyz:"https://rdap.centralnic.com/xyz/domain/",
+  re:"https://rdap.nic.fr/domain/", es:"https://rdap.nic.es/domain/",
+  de:"https://rdap.denic.de/domain/", eu:"https://rdap.eu/domain/",
+  uk:"https://rdap.nominet.uk/uk/domain/",
 };
 
 // ═══════════════════════════════════════════════════════
-// Domain hack finder
+// Helpers
 // ═══════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
 
 function findHacks(name) {
-  const hacks = [];
-  const n = name.toLowerCase();
-  if (n.length > 2) {
-    const s2 = n.slice(-2);
-    if (TLDS_2.has(s2)) {
-      const prefix = n.slice(0, -2);
-      if (prefix.length >= 1) hacks.push({ prefix, tld: s2, domain: `${prefix}.${s2}` });
-    }
-  }
-  if (n.length > 3) {
-    const s3 = n.slice(-3);
-    if (TLDS_3.has(s3)) {
-      const prefix = n.slice(0, -3);
-      if (prefix.length >= 1) hacks.push({ prefix, tld: s3, domain: `${prefix}.${s3}` });
-    }
-  }
+  const hacks = [], n = name.toLowerCase();
+  if (n.length > 2) { const s = n.slice(-2); if (TLDS_2.has(s) && n.length > 2) hacks.push({ domain: `${n.slice(0,-2)}.${s}` }); }
+  if (n.length > 3) { const s = n.slice(-3); if (TLDS_3.has(s) && n.length > 3) hacks.push({ domain: `${n.slice(0,-3)}.${s}` }); }
   return hacks;
 }
 
-// ═══════════════════════════════════════════════════════
-// Check domain via RDAP or Cloudflare DoH
-// ═══════════════════════════════════════════════════════
-
 async function checkDomain(domain) {
   const tld = domain.split('.').pop();
-
-  // Try RDAP first
-  const rdapServer = RDAP_SERVERS[tld];
-  if (rdapServer) {
+  const rdap = RDAP_SERVERS[tld];
+  if (rdap) {
     try {
-      const resp = await fetch(`${rdapServer}${domain}`, {
-        headers: { Accept: "application/rdap+json" },
-        signal: AbortSignal.timeout(8000),
-      });
-      if (resp.status === 404) return { status: "available", method: "rdap" };
-      if (resp.ok) return { status: "taken", method: "rdap" };
-    } catch (e) {
-      // RDAP failed, fall through to DoH
-    }
+      const r = await fetch(`${rdap}${domain}`, { headers: { Accept: "application/rdap+json" }, signal: AbortSignal.timeout(8000) });
+      if (r.status === 404) return { status: "available", method: "rdap" };
+      if (r.ok) return { status: "taken", method: "rdap" };
+    } catch(e) {}
   }
-
-  // Fallback: Cloudflare DNS-over-HTTPS
   try {
-    const resp = await fetch(
-      `https://cloudflare-dns.com/dns-query?name=${domain}&type=A`,
-      { headers: { Accept: "application/dns-json" }, signal: AbortSignal.timeout(5000) }
-    );
-    const data = await resp.json();
-    // Status 3 = NXDOMAIN (does not exist), 0 = NOERROR
-    if (data.Status === 3) return { status: "available", method: "dns" };
-    if (data.Status === 0 && data.Answer && data.Answer.length > 0) return { status: "taken", method: "dns" };
-    // Status 0 but no answer — domain exists but no A record
-    if (data.Status === 0) return { status: "taken", method: "dns" };
+    const r = await fetch(`https://cloudflare-dns.com/dns-query?name=${domain}&type=A`, { headers: { Accept: "application/dns-json" }, signal: AbortSignal.timeout(5000) });
+    const d = await r.json();
+    if (d.Status === 3) return { status: "available", method: "dns" };
+    if (d.Status === 0) return { status: "taken", method: "dns" };
     return { status: "available", method: "dns" };
-  } catch (e) {
-    return { status: "error", method: "none" };
-  }
+  } catch(e) { return { status: "error", method: "none" }; }
 }
 
-// ═══════════════════════════════════════════════════════
-// UI Logic
-// ═══════════════════════════════════════════════════════
+function showToast(msg) { const t=$('toast'); t.textContent=msg; t.classList.add('visible'); setTimeout(()=>t.classList.remove('visible'),2000); }
 
-const $ = id => document.getElementById(id);
-
-// Extension chips
-document.querySelectorAll('.chip[data-ext]').forEach(chip => {
-  chip.addEventListener('click', () => chip.classList.toggle('active'));
+// ═══════════════════════════════════════════════════════
+// Tabs
+// ═══════════════════════════════════════════════════════
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    $(`panel-${tab.dataset.tab}`).classList.add('active');
+  });
 });
 
-// Hack toggle
+// ═══════════════════════════════════════════════════════
+// API Key management
+// ═══════════════════════════════════════════════════════
+function getApiKey() { return localStorage.getItem('gemini_api_key') || ''; }
+function setApiKey(k) { localStorage.setItem('gemini_api_key', k); }
+
+$('settingsBtn').addEventListener('click', () => {
+  $('apiKeyInput').value = getApiKey();
+  $('apiModalOverlay').classList.add('visible');
+  $('apiKeyInput').focus();
+});
+$('apiModalCancel').addEventListener('click', () => $('apiModalOverlay').classList.remove('visible'));
+$('apiModalOverlay').addEventListener('click', e => { if(e.target===$('apiModalOverlay')) $('apiModalOverlay').classList.remove('visible'); });
+$('apiModalSave').addEventListener('click', () => {
+  setApiKey($('apiKeyInput').value.trim());
+  $('apiModalOverlay').classList.remove('visible');
+  showToast('API key saved');
+});
+
+// ═══════════════════════════════════════════════════════
+// Gemini word generation
+// ═══════════════════════════════════════════════════════
+let generatedWords = []; // [{name, context}]
+
+$('generateBtn').addEventListener('click', async () => {
+  const theme = $('themeInput').value.trim();
+  if (!theme) return;
+  const count = parseInt($('countInput').value) || 30;
+  const key = getApiKey();
+  if (!key) { $('settingsBtn').click(); showToast('Add your Gemini API key first'); return; }
+
+  $('generateBtn').disabled = true;
+  $('generateBtn').textContent = 'Generating...';
+  $('wordListSection').style.display = 'block';
+  $('wordList').innerHTML = '<div class="skeleton-line"></div><div class="skeleton-line"></div><div class="skeleton-line"></div>';
+
+  const prompt = `Generate exactly ${count} short, brandable domain name ideas around the theme: "${theme}".
+
+Rules:
+- Each name must be a SINGLE word (no spaces, no dots, no hyphens), lowercase, max 12 characters
+- Mix: direct variations, latin/greek roots, portmanteaus, abstract/evocative names, prefix/suffix combos (get, try, my, go + root)
+- Optimize for names whose last 2-3 letters match real TLD extensions (like .re, .es, .er, .it, .io, .al, .am, .is, .at, .in, .me, .to, .do, .ar) — these create domain hacks
+- Be creative, unexpected, memorable
+
+Output ONLY a JSON array of objects: [{"name": "word", "context": "very short note (etymology, meaning, or why it fits)"}]
+No markdown, no explanation, just the JSON array.`;
+
+  try {
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 1.0, maxOutputTokens: 4096 }
+      })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error?.message || `API error ${resp.status}`);
+    }
+
+    const data = await resp.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+    // Parse JSON from response (handle markdown code blocks)
+    const jsonStr = text.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+    const words = JSON.parse(jsonStr);
+
+    generatedWords = words.map(w => ({
+      name: w.name.toLowerCase().replace(/[^a-z0-9]/g, ''),
+      context: w.context || ''
+    })).filter(w => w.name.length > 0);
+
+    renderWordList();
+  } catch (e) {
+    $('wordList').innerHTML = `<p style="color: var(--accent-amber); font-size: 13px;">Error: ${e.message}</p>`;
+  }
+
+  $('generateBtn').disabled = false;
+  $('generateBtn').textContent = 'Generate names';
+});
+
+function renderWordList() {
+  $('wordList').innerHTML = generatedWords.map((w, i) => `
+    <div class="word-item" data-index="${i}">
+      <span class="word-name">${w.name}</span>
+      <span class="word-context">${w.context}</span>
+      <button class="word-remove" onclick="removeWord(${i})">×</button>
+    </div>
+  `).join('');
+  $('wordCount').textContent = `${generatedWords.length} names`;
+}
+
+window.removeWord = function(i) {
+  generatedWords.splice(i, 1);
+  renderWordList();
+};
+
+$('selectAllBtn')?.addEventListener('click', () => {
+  // Copy all generated words to manual textarea and switch to manual tab if needed
+  const names = generatedWords.map(w => w.name).join(', ');
+  $('namesInput').value = names;
+  showToast(`${generatedWords.length} names copied`);
+});
+
+$('clearWordsBtn')?.addEventListener('click', () => {
+  generatedWords = [];
+  renderWordList();
+});
+
+// ═══════════════════════════════════════════════════════
+// Extension chips
+// ═══════════════════════════════════════════════════════
+document.querySelectorAll('.chip[data-ext]').forEach(chip => chip.addEventListener('click', () => chip.classList.toggle('active')));
 $('hackToggle').addEventListener('click', function() { this.classList.toggle('active'); });
 
-// Add extension modal
-$('addExtBtn').addEventListener('click', () => {
-  $('modalOverlay').classList.add('visible');
-  $('modalInput').value = '.';
-  $('modalInput').focus();
-});
+$('addExtBtn').addEventListener('click', () => { $('modalOverlay').classList.add('visible'); $('modalInput').value='.'; $('modalInput').focus(); });
 $('modalCancel').addEventListener('click', () => $('modalOverlay').classList.remove('visible'));
-$('modalOverlay').addEventListener('click', e => {
-  if (e.target === $('modalOverlay')) $('modalOverlay').classList.remove('visible');
-});
-$('modalInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('modalAdd').click(); });
+$('modalOverlay').addEventListener('click', e => { if(e.target===$('modalOverlay')) $('modalOverlay').classList.remove('visible'); });
+$('modalInput').addEventListener('keydown', e => { if(e.key==='Enter') $('modalAdd').click(); });
 $('modalAdd').addEventListener('click', () => {
-  let ext = $('modalInput').value.trim().toLowerCase();
-  if (!ext.startsWith('.')) ext = '.' + ext;
-  if (ext.length < 2) return;
-  // Check if already exists
-  const existing = document.querySelectorAll('.chip[data-ext]');
-  for (const c of existing) if (c.dataset.ext === ext) { $('modalOverlay').classList.remove('visible'); return; }
-  // Add new chip
-  const chip = document.createElement('button');
-  chip.className = 'chip active';
-  chip.dataset.ext = ext;
-  chip.textContent = ext;
-  chip.addEventListener('click', () => chip.classList.toggle('active'));
-  $('chipsRow').insertBefore(chip, $('addExtBtn'));
+  let ext=$('modalInput').value.trim().toLowerCase();
+  if(!ext.startsWith('.')) ext='.'+ext;
+  if(ext.length<2) return;
+  for(const c of document.querySelectorAll('.chip[data-ext]')) if(c.dataset.ext===ext) { $('modalOverlay').classList.remove('visible'); return; }
+  const chip=document.createElement('button');
+  chip.className='chip active'; chip.dataset.ext=ext; chip.textContent=ext;
+  chip.addEventListener('click',()=>chip.classList.toggle('active'));
+  $('chipsRow').insertBefore(chip,$('addExtBtn'));
   $('modalOverlay').classList.remove('visible');
 });
 
-// Toast
-function showToast(msg) {
-  const t = $('toast');
-  t.textContent = msg;
-  t.classList.add('visible');
-  setTimeout(() => t.classList.remove('visible'), 2000);
-}
-
-// Copy button
 $('copyBtn').addEventListener('click', () => {
-  const domains = [...document.querySelectorAll('.summary-list li')]
-    .map(li => li.textContent).join('\n');
-  navigator.clipboard.writeText(domains).then(() => showToast('Copied'));
+  const domains=[...document.querySelectorAll('.summary-list li')].map(li=>li.textContent).join('\n');
+  navigator.clipboard.writeText(domains).then(()=>showToast('Copied'));
 });
 
 // ═══════════════════════════════════════════════════════
 // Main check flow
 // ═══════════════════════════════════════════════════════
-
 $('checkBtn').addEventListener('click', async () => {
-  const rawInput = $('namesInput').value.trim();
-  if (!rawInput) return;
+  // Get names from active panel
+  const activeTab = document.querySelector('.tab.active').dataset.tab;
+  let names = [];
 
-  // Parse names
-  const names = rawInput
-    .split(/[,\n]+/)
-    .map(n => n.trim().toLowerCase().replace(/[^a-z0-9-]/g, ''))
-    .filter(n => n.length > 0);
+  if (activeTab === 'generate') {
+    names = generatedWords.map(w => w.name);
+  } else {
+    const raw = $('namesInput').value.trim();
+    if (!raw) return;
+    names = raw.split(/[,\n]+/).map(n => n.trim().toLowerCase().replace(/[^a-z0-9-]/g, '')).filter(n => n.length > 0);
+  }
 
-  if (names.length === 0) return;
+  if (names.length === 0) { showToast('Add some names first'); return; }
 
-  // Get active extensions
-  const extensions = [...document.querySelectorAll('.chip.active[data-ext]')]
-    .map(c => c.dataset.ext);
-
+  const extensions = [...document.querySelectorAll('.chip.active[data-ext]')].map(c => c.dataset.ext);
   if (extensions.length === 0) { showToast('Select at least one extension'); return; }
 
   const hacksEnabled = $('hackToggle').classList.contains('active');
-
-  // Build domain list
-  const domains = []; // { domain, name, category }
-  const seen = new Set();
+  const domains = [], seen = new Set();
 
   for (const name of names) {
     for (const ext of extensions) {
-      const domain = `${name}${ext}`;
-      if (!seen.has(domain)) { domains.push({ domain, name, category: 'standard' }); seen.add(domain); }
+      const d = `${name}${ext}`;
+      if (!seen.has(d)) { domains.push({domain:d, name, category:'standard'}); seen.add(d); }
     }
     if (hacksEnabled) {
-      for (const hack of findHacks(name)) {
-        if (!seen.has(hack.domain)) { domains.push({ domain: hack.domain, name, category: 'hack' }); seen.add(hack.domain); }
+      for (const h of findHacks(name)) {
+        if (!seen.has(h.domain)) { domains.push({domain:h.domain, name, category:'hack'}); seen.add(h.domain); }
       }
     }
   }
 
-  // UI setup
+  // UI
   $('checkBtn').disabled = true;
   $('checkBtn').textContent = 'Checking...';
   $('resultsSection').classList.add('visible');
@@ -708,101 +655,65 @@ $('checkBtn').addEventListener('click', async () => {
   $('statChecked').textContent = '0';
   $('statTotal').textContent = domains.length;
 
-  // Group containers
   const groups = {};
-  for (const cat of ['standard', 'hack']) {
-    const items = domains.filter(d => d.category === cat);
-    if (items.length === 0) continue;
-    const header = document.createElement('div');
-    header.className = 'result-group-header';
-    header.textContent = cat === 'standard' ? `Standard (${items.length})` : `Domain hacks (${items.length})`;
-    $('resultsContainer').appendChild(header);
-    const container = document.createElement('div');
-    $('resultsContainer').appendChild(container);
-    groups[cat] = container;
+  for (const cat of ['standard','hack']) {
+    const items = domains.filter(d=>d.category===cat);
+    if (!items.length) continue;
+    const h = document.createElement('div'); h.className='result-group-header';
+    h.textContent = cat==='standard'?`Standard (${items.length})`:`Domain hacks (${items.length})`;
+    $('resultsContainer').appendChild(h);
+    const c = document.createElement('div'); $('resultsContainer').appendChild(c); groups[cat]=c;
   }
 
-  // Run checks with concurrency limit
-  let checked = 0;
-  let availCount = 0;
-  const availDomains = [];
+  let checked=0, availCount=0; const availDomains=[];
   const CONCURRENCY = 6;
 
-  const queue = [...domains];
-  const running = new Set();
-
   async function processOne(item) {
-    // Add placeholder row
-    const row = document.createElement('div');
-    row.className = 'result-row checking';
-    row.innerHTML = `
-      <span class="result-domain">${item.domain}</span>
-      <span class="result-badge"><span class="spinner"></span></span>
-    `;
-    if (groups[item.category]) groups[item.category].appendChild(row);
-
+    const row = document.createElement('div'); row.className='result-row checking';
+    row.innerHTML=`<span class="result-domain">${item.domain}</span><span class="result-badge"><span class="spinner"></span></span>`;
+    if(groups[item.category]) groups[item.category].appendChild(row);
     const result = await checkDomain(item.domain);
     checked++;
-
-    // Update row
-    row.className = `result-row ${result.status}`;
-    const badgeText = result.status === 'available' ? 'available'
-      : result.status === 'taken' ? 'taken'
-      : 'error';
-    const methodHint = result.method === 'dns' ? ' ~' : '';
-    row.querySelector('.result-badge').textContent = badgeText + methodHint;
-
-    if (result.status === 'available') {
-      availCount++;
-      availDomains.push(item);
-    }
-
-    // Update stats
-    $('statChecked').textContent = checked;
-    $('statAvail').textContent = availCount;
-    $('progressFill').style.width = `${(checked / domains.length * 100).toFixed(1)}%`;
+    row.className=`result-row ${result.status}`;
+    const badge = result.status==='available'?'available':result.status==='taken'?'taken':'error';
+    row.querySelector('.result-badge').textContent = badge + (result.method==='dns'?' ~':'');
+    if(result.status==='available') { availCount++; availDomains.push(item); }
+    $('statChecked').textContent=checked;
+    $('statAvail').textContent=availCount;
+    $('progressFill').style.width=`${(checked/domains.length*100).toFixed(1)}%`;
   }
 
-  // Process with concurrency
-  let idx = 0;
+  let idx=0; const running=new Set();
   await new Promise(resolve => {
     function next() {
-      while (running.size < CONCURRENCY && idx < domains.length) {
-        const item = domains[idx++];
-        const p = processOne(item).then(() => {
-          running.delete(p);
-          if (idx < domains.length || running.size > 0) next();
-          else resolve();
-        });
+      while(running.size<CONCURRENCY && idx<domains.length) {
+        const item=domains[idx++];
+        const p=processOne(item).then(()=>{ running.delete(p); if(idx<domains.length||running.size>0) next(); else resolve(); });
         running.add(p);
       }
-      if (running.size === 0) resolve();
+      if(running.size===0) resolve();
     }
     next();
   });
 
-  // Summary
   if (availDomains.length > 0) {
     $('summary').classList.add('visible');
     const byName = {};
-    for (const d of availDomains) {
-      if (!byName[d.name]) byName[d.name] = [];
-      byName[d.name].push(d.domain);
-    }
+    for (const d of availDomains) { if(!byName[d.name]) byName[d.name]=[]; byName[d.name].push(d.domain); }
     let html = '';
-    for (const [name, doms] of Object.entries(byName).sort()) {
-      html += `<div class="summary-group">`;
-      html += `<div class="summary-group-name">${name}</div>`;
-      html += `<ul class="summary-list">${doms.map(d => `<li>${d}</li>`).join('')}</ul>`;
-      html += `</div>`;
+    for (const [name,doms] of Object.entries(byName).sort()) {
+      html += `<div class="summary-group"><div class="summary-group-name">${name}</div>`;
+      html += `<ul class="summary-list">${doms.map(d=>`<li>${d}</li>`).join('')}</ul></div>`;
     }
     $('summaryContent').innerHTML = html;
   }
 
-  $('checkBtn').disabled = false;
-  $('checkBtn').textContent = 'Check availability';
+  $('checkBtn').disabled=false;
+  $('checkBtn').textContent='Check availability';
 });
-</script>
 
+// Auto-show API modal if no key set
+if (!getApiKey()) { /* Don't auto-show, let user discover via settings or generate button */ }
+</script>
 </body>
 </html>
