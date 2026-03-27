@@ -138,20 +138,59 @@
   }
   .word-count { font-size: 12px; color: var(--text-tertiary); margin-left: auto; font-variant-numeric: tabular-nums; }
 
-  /* Extension chips */
-  .chips-row { display: flex; flex-wrap: wrap; gap: 6px; }
-  .chip {
-    display: inline-flex; align-items: center; gap: 4px;
-    font-family: var(--font-mono); font-size: 13px; font-weight: 500;
-    padding: 5px 10px; border-radius: var(--radius-sm);
-    border: 1px solid var(--border); background: var(--bg-200);
-    color: var(--text-secondary); cursor: pointer; transition: all 0.15s;
-    user-select: none; -webkit-tap-highlight-color: transparent;
+  /* Extension multi-select */
+  .ext-select { position: relative; }
+  .ext-trigger {
+    width: 100%; display: flex; align-items: center; flex-wrap: wrap; gap: 5px;
+    min-height: 40px; padding: 6px 10px; background: var(--bg-100);
+    border: 1px solid var(--border); border-radius: var(--radius-md);
+    cursor: pointer; transition: border-color 0.15s;
+    -webkit-tap-highlight-color: transparent;
   }
-  .chip:hover { border-color: var(--border-light); }
-  .chip.active { background: var(--text-primary); color: var(--bg-100); border-color: var(--text-primary); }
-  .chip-add { border-style: dashed; color: var(--text-tertiary); }
-  .chip-add:hover { color: var(--text-secondary); }
+  .ext-trigger:hover, .ext-trigger.open { border-color: var(--border-light); }
+  .ext-tag {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-family: var(--font-mono); font-size: 12px; font-weight: 500;
+    padding: 3px 8px; border-radius: 4px;
+    background: var(--text-primary); color: var(--bg-100);
+  }
+  .ext-tag-remove {
+    cursor: pointer; font-size: 14px; line-height: 1; margin-left: 2px; opacity: 0.6;
+  }
+  .ext-tag-remove:hover { opacity: 1; }
+  .ext-placeholder { font-size: 13px; color: var(--text-tertiary); }
+  .ext-dropdown {
+    display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+    background: var(--bg-200); border: 1px solid var(--border);
+    border-radius: var(--radius-md); z-index: 50; max-height: 240px;
+    overflow: hidden; flex-direction: column;
+  }
+  .ext-dropdown.open { display: flex; }
+  .ext-search {
+    width: 100%; padding: 10px 12px; font-family: var(--font-mono); font-size: 13px;
+    background: var(--bg-100); border: none; border-bottom: 1px solid var(--border);
+    color: var(--text-primary); outline: none;
+  }
+  .ext-search::placeholder { color: var(--text-tertiary); }
+  .ext-options { overflow-y: auto; max-height: 196px; }
+  .ext-option {
+    display: flex; align-items: center; gap: 8px; padding: 7px 12px;
+    font-family: var(--font-mono); font-size: 13px; color: var(--text-secondary);
+    cursor: pointer; transition: background 0.1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .ext-option:hover { background: var(--bg-300); }
+  .ext-option.selected { color: var(--text-primary); }
+  .ext-option .check {
+    width: 16px; height: 16px; border: 1px solid var(--border-light);
+    border-radius: 3px; display: flex; align-items: center; justify-content: center;
+    font-size: 11px; flex-shrink: 0; transition: all 0.15s;
+  }
+  .ext-option.selected .check {
+    background: var(--text-primary); border-color: var(--text-primary); color: var(--bg-100);
+  }
+  .ext-option .ext-label { flex: 1; }
+  .ext-option .ext-desc { font-size: 11px; color: var(--text-tertiary); }
 
   /* Toggle */
   .toggle-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
@@ -246,7 +285,7 @@
   .summary-group { margin-bottom: 8px; }
   .summary-group-name { font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 4px; }
 
-  /* Modal */
+  /* Modal (API key) */
   .modal-overlay {
     display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
     z-index: 100; align-items: flex-end; justify-content: center;
@@ -347,12 +386,12 @@
 <!-- EXTENSIONS (shared) -->
 <div class="section">
   <div class="section-label">Extensions</div>
-  <div class="chips-row" id="chipsRow">
-    <button class="chip active" data-ext=".com">.com</button>
-    <button class="chip active" data-ext=".app">.app</button>
-    <button class="chip active" data-ext=".co">.co</button>
-    <button class="chip active" data-ext=".ai">.ai</button>
-    <button class="chip chip-add" id="addExtBtn">+ add</button>
+  <div class="ext-select" id="extSelect">
+    <div class="ext-trigger" id="extTrigger"></div>
+    <div class="ext-dropdown" id="extDropdown">
+      <input class="ext-search" id="extSearch" placeholder="Search extensions..." spellcheck="false">
+      <div class="ext-options" id="extOptions"></div>
+    </div>
   </div>
   <div class="toggle-row">
     <div class="toggle active" id="hackToggle"></div>
@@ -383,17 +422,7 @@
   <div id="summaryContent"></div>
 </div>
 
-<!-- ADD EXTENSION MODAL -->
-<div class="modal-overlay" id="modalOverlay">
-  <div class="modal">
-    <div class="modal-title">Add extension</div>
-    <input class="modal-input" id="modalInput" placeholder=".io" maxlength="10">
-    <div class="modal-actions">
-      <button class="btn-secondary" id="modalCancel">Cancel</button>
-      <button class="btn-primary" id="modalAdd" style="width:auto; padding: 8px 20px;">Add</button>
-    </div>
-  </div>
-</div>
+<!-- (extension modal removed — replaced by dropdown multi-select) -->
 
 <!-- API KEY MODAL -->
 <div class="modal-overlay" id="apiModalOverlay">
@@ -531,7 +560,12 @@ Output ONLY a JSON array of objects: [{"name": "word", "context": "very short no
 No markdown, no explanation, just the JSON array.`;
 
   try {
-    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
+    // Try models in order of capability — fallback if quota exceeded
+    const models = ['gemini-2.0-flash-lite', 'gemini-1.5-flash', 'gemini-2.0-flash'];
+    let resp, lastError;
+    for (const model of models) {
+      try {
+        resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -540,10 +574,19 @@ No markdown, no explanation, just the JSON array.`;
       })
     });
 
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({}));
-      throw new Error(err.error?.message || `API error ${resp.status}`);
+        if (resp.ok) break; // success — use this model
+        const errData = await resp.json().catch(() => ({}));
+        lastError = errData.error?.message || `API error ${resp.status}`;
+        if (resp.status === 429 || (lastError && lastError.includes('quota'))) {
+          resp = null; continue; // try next model
+        }
+        throw new Error(lastError);
+      } catch(fetchErr) {
+        if (fetchErr.message && !fetchErr.message.includes('quota')) throw fetchErr;
+        lastError = fetchErr.message; resp = null; continue;
+      }
     }
+    if (!resp || !resp.ok) throw new Error(lastError || 'All models quota exceeded. Try again later.');
 
     const data = await resp.json();
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
@@ -595,26 +638,105 @@ $('clearWordsBtn')?.addEventListener('click', () => {
 });
 
 // ═══════════════════════════════════════════════════════
-// Extension chips
+// Extension multi-select
 // ═══════════════════════════════════════════════════════
-document.querySelectorAll('.chip[data-ext]').forEach(chip => chip.addEventListener('click', () => chip.classList.toggle('active')));
-$('hackToggle').addEventListener('click', function() { this.classList.toggle('active'); });
 
-$('addExtBtn').addEventListener('click', () => { $('modalOverlay').classList.add('visible'); $('modalInput').value='.'; $('modalInput').focus(); });
-$('modalCancel').addEventListener('click', () => $('modalOverlay').classList.remove('visible'));
-$('modalOverlay').addEventListener('click', e => { if(e.target===$('modalOverlay')) $('modalOverlay').classList.remove('visible'); });
-$('modalInput').addEventListener('keydown', e => { if(e.key==='Enter') $('modalAdd').click(); });
-$('modalAdd').addEventListener('click', () => {
-  let ext=$('modalInput').value.trim().toLowerCase();
-  if(!ext.startsWith('.')) ext='.'+ext;
-  if(ext.length<2) return;
-  for(const c of document.querySelectorAll('.chip[data-ext]')) if(c.dataset.ext===ext) { $('modalOverlay').classList.remove('visible'); return; }
-  const chip=document.createElement('button');
-  chip.className='chip active'; chip.dataset.ext=ext; chip.textContent=ext;
-  chip.addEventListener('click',()=>chip.classList.toggle('active'));
-  $('chipsRow').insertBefore(chip,$('addExtBtn'));
-  $('modalOverlay').classList.remove('visible');
+const ALL_EXTENSIONS = [
+  {ext:".com",desc:"Commercial"},{ext:".app",desc:"Applications"},{ext:".co",desc:"Colombia / Company"},
+  {ext:".ai",desc:"Artificial Intelligence"},{ext:".io",desc:"Tech / Startups"},
+  {ext:".dev",desc:"Developers"},{ext:".net",desc:"Network"},{ext:".org",desc:"Organization"},
+  {ext:".fr",desc:"France"},{ext:".me",desc:"Personal"},{ext:".sh",desc:"Shell / St. Helena"},
+  {ext:".so",desc:"Somalia / So..."},{ext:".to",desc:"Tonga / To..."},{ext:".xyz",desc:"Generic"},
+  {ext:".cc",desc:"Cocos Islands"},{ext:".tv",desc:"Television"},{ext:".gg",desc:"Gaming"},
+  {ext:".ly",desc:"Libya / -ly words"},{ext:".la",desc:"Laos / Los Angeles"},{ext:".fm",desc:"Radio / Podcast"},
+  {ext:".am",desc:"Armenia / AM"},{ext:".im",desc:"Isle of Man / I'm"},
+  {ext:".is",desc:"Iceland / is..."},{ext:".it",desc:"Italy / do it"},
+  {ext:".at",desc:"Austria / at..."},{ext:".in",desc:"India / in..."},
+  {ext:".re",desc:"Reunion / re-"},{ext:".es",desc:"Spain / -es words"},
+  {ext:".er",desc:"Eritrea / -er words"},{ext:".us",desc:"United States"},
+  {ext:".de",desc:"Germany"},{ext:".uk",desc:"United Kingdom"},{ext:".eu",desc:"Europe"},
+  {ext:".be",desc:"Belgium / be..."},{ext:".nl",desc:"Netherlands"},
+  {ext:".ch",desc:"Switzerland"},{ext:".se",desc:"Sweden"},{ext:".no",desc:"Norway"},
+  {ext:".fi",desc:"Finland"},{ext:".dk",desc:"Denmark"},{ext:".pt",desc:"Portugal"},
+  {ext:".pl",desc:"Poland"},{ext:".cz",desc:"Czech Republic"},{ext:".ro",desc:"Romania"},
+  {ext:".rs",desc:"Serbia / -rs"},{ext:".hr",desc:"Croatia"},
+  {ext:".bio",desc:"Biology"},{ext:".art",desc:"Art"},{ext:".fun",desc:"Fun"},
+  {ext:".lol",desc:"Humor"},{ext:".wtf",desc:"WTF"},{ext:".run",desc:"Running"},
+  {ext:".fit",desc:"Fitness"},{ext:".ski",desc:"Skiing"},{ext:".dog",desc:"Dogs"},
+  {ext:".bar",desc:"Bar"},{ext:".pub",desc:"Pub"},{ext:".ink",desc:"Ink / Writing"},
+  {ext:".fyi",desc:"For Your Info"},{ext:".vip",desc:"VIP"},{ext:".pro",desc:"Professional"},
+  {ext:".top",desc:"Top"},{ext:".win",desc:"Win"},{ext:".red",desc:"Red"},
+  {ext:".day",desc:"Day"},{ext:".moi",desc:"Moi (French)"},{ext:".eco",desc:"Ecology"},
+];
+
+let selectedExts = new Set(['.com', '.app', '.co', '.ai']);
+
+function renderExtTrigger() {
+  const trigger = $('extTrigger');
+  if (selectedExts.size === 0) {
+    trigger.innerHTML = '<span class="ext-placeholder">Select extensions...</span>';
+  } else {
+    trigger.innerHTML = [...selectedExts].sort().map(ext =>
+      `<span class="ext-tag">${ext}<span class="ext-tag-remove" data-ext="${ext}">&times;</span></span>`
+    ).join('');
+  }
+  // Bind remove clicks
+  trigger.querySelectorAll('.ext-tag-remove').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      selectedExts.delete(btn.dataset.ext);
+      renderExtTrigger();
+      renderExtOptions();
+    });
+  });
+}
+
+function renderExtOptions(filter = '') {
+  const container = $('extOptions');
+  const f = filter.toLowerCase();
+  const filtered = ALL_EXTENSIONS.filter(e => e.ext.includes(f) || e.desc.toLowerCase().includes(f));
+  container.innerHTML = filtered.map(e => {
+    const sel = selectedExts.has(e.ext) ? ' selected' : '';
+    return `<div class="ext-option${sel}" data-ext="${e.ext}">
+      <span class="check">${sel ? '&#10003;' : ''}</span>
+      <span class="ext-label">${e.ext}</span>
+      <span class="ext-desc">${e.desc}</span>
+    </div>`;
+  }).join('');
+  container.querySelectorAll('.ext-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      const ext = opt.dataset.ext;
+      if (selectedExts.has(ext)) selectedExts.delete(ext);
+      else selectedExts.add(ext);
+      renderExtTrigger();
+      renderExtOptions($('extSearch').value);
+    });
+  });
+}
+
+// Toggle dropdown
+$('extTrigger').addEventListener('click', () => {
+  const dd = $('extDropdown');
+  const isOpen = dd.classList.contains('open');
+  if (isOpen) { dd.classList.remove('open'); $('extTrigger').classList.remove('open'); }
+  else { dd.classList.add('open'); $('extTrigger').classList.add('open'); $('extSearch').value=''; renderExtOptions(); $('extSearch').focus(); }
 });
+
+// Search filter
+$('extSearch').addEventListener('input', () => renderExtOptions($('extSearch').value));
+
+// Close on outside click
+document.addEventListener('click', e => {
+  if (!$('extSelect').contains(e.target)) {
+    $('extDropdown').classList.remove('open');
+    $('extTrigger').classList.remove('open');
+  }
+});
+
+// Init
+renderExtTrigger();
+
+$('hackToggle').addEventListener('click', function() { this.classList.toggle('active'); });
 
 $('copyBtn').addEventListener('click', () => {
   const domains=[...document.querySelectorAll('.summary-list li')].map(li=>li.textContent).join('\n');
@@ -639,7 +761,7 @@ $('checkBtn').addEventListener('click', async () => {
 
   if (names.length === 0) { showToast('Add some names first'); return; }
 
-  const extensions = [...document.querySelectorAll('.chip.active[data-ext]')].map(c => c.dataset.ext);
+  const extensions = [...selectedExts];
   if (extensions.length === 0) { showToast('Select at least one extension'); return; }
 
   const hacksEnabled = $('hackToggle').classList.contains('active');
