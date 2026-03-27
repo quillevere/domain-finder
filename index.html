@@ -259,8 +259,11 @@
 
   .result-badge { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 999px; }
   .result-row.available .result-badge { color: var(--accent-green); background: var(--accent-green-dim); }
+  .result-row.maybe .result-domain { color: var(--accent-amber); }
+  .result-row.maybe .result-badge { color: var(--accent-amber); background: var(--accent-amber-dim); }
   .result-row.taken .result-badge { color: var(--text-tertiary); background: var(--bg-300); }
-  .result-row.error .result-badge { color: var(--accent-amber); background: var(--accent-amber-dim); }
+  .result-row.error .result-badge, .result-row.unknown .result-badge { color: var(--text-tertiary); background: var(--bg-300); }
+  .result-row.error .result-domain, .result-row.unknown .result-domain { color: var(--text-tertiary); }
   .result-row.checking .result-badge { color: var(--text-tertiary); background: var(--bg-300); }
 
   .result-right { display: flex; align-items: center; gap: 6px; }
@@ -472,30 +475,69 @@ const RDAP_SERVERS = {
 // ═══════════════════════════════════════════════════════
 const $ = id => document.getElementById(id);
 
+// ccTLDs that are restricted, not open for public registration, or unreliable for checks
+const RESTRICTED_TLDS = new Set([
+  "va","ye","kp","er","iq","ir","cu","sy","ss","sd","gq","tp","eh","an",
+  "na","ne","ml","bf","td","cf","cg","cd","gw","sl","tg","bj","bi","rw",
+  "mq","gp","gf","pm","pn","fk","gs","bv","sj","hm","aq","ax","wf",
+  "yt","nc","tf","tk","kn","ms","gg","je","im"
+]);
+
 function findHacks(name) {
   const hacks = [], n = name.toLowerCase();
-  if (n.length > 2) { const s = n.slice(-2); if (TLDS_2.has(s) && n.length > 2) hacks.push({ domain: `${n.slice(0,-2)}.${s}` }); }
-  if (n.length > 3) { const s = n.slice(-3); if (TLDS_3.has(s) && n.length > 3) hacks.push({ domain: `${n.slice(0,-3)}.${s}` }); }
+  if (n.length > 2) {
+    const s = n.slice(-2);
+    if (TLDS_2.has(s) && !RESTRICTED_TLDS.has(s) && n.length > 2)
+      hacks.push({ domain: `${n.slice(0,-2)}.${s}` });
+  }
+  if (n.length > 3) {
+    const s = n.slice(-3);
+    if (TLDS_3.has(s) && n.length > 3)
+      hacks.push({ domain: `${n.slice(0,-3)}.${s}` });
+  }
   return hacks;
 }
 
 async function checkDomain(domain) {
   const tld = domain.split('.').pop();
-  const rdap = RDAP_SERVERS[tld];
-  if (rdap) {
+  const rdapServer = RDAP_SERVERS[tld];
+
+  // Strategy 1: RDAP (authoritative, reliable)
+  if (rdapServer) {
     try {
-      const r = await fetch(`${rdap}${domain}`, { headers: { Accept: "application/rdap+json" }, signal: AbortSignal.timeout(8000) });
+      const r = await fetch(`${rdapServer}${domain}`, {
+        headers: { Accept: "application/rdap+json" },
+        signal: AbortSignal.timeout(12000)
+      });
       if (r.status === 404) return { status: "available", method: "rdap" };
       if (r.ok) return { status: "taken", method: "rdap" };
-    } catch(e) {}
+      // Other status = error, don't fallback to DNS
+      return { status: "error", method: "rdap" };
+    } catch(e) {
+      // Timeout or network error on a KNOWN RDAP server = error, NOT "maybe available"
+      return { status: "error", method: "rdap" };
+    }
   }
+
+  // Strategy 2: For TLDs WITHOUT RDAP — DNS gives hints but is NOT authoritative
+  // A domain can be registered with no DNS records. We mark these as "unverified".
   try {
-    const r = await fetch(`https://cloudflare-dns.com/dns-query?name=${domain}&type=A`, { headers: { Accept: "application/dns-json" }, signal: AbortSignal.timeout(5000) });
+    const r = await fetch(
+      `https://cloudflare-dns.com/dns-query?name=${domain}&type=A`,
+      { headers: { Accept: "application/dns-json" }, signal: AbortSignal.timeout(5000) }
+    );
     const d = await r.json();
-    if (d.Status === 3) return { status: "available", method: "dns" };
+    // NXDOMAIN = probably available (but not guaranteed)
+    if (d.Status === 3) return { status: "maybe", method: "dns" };
+    // NOERROR with answers = definitely taken
+    if (d.Status === 0 && d.Answer && d.Answer.length > 0) return { status: "taken", method: "dns" };
+    // NOERROR without answers = domain exists in DNS but no A record = likely taken
     if (d.Status === 0) return { status: "taken", method: "dns" };
-    return { status: "available", method: "dns" };
-  } catch(e) { return { status: "error", method: "none" }; }
+    // SERVFAIL or other = can't determine
+    return { status: "unknown", method: "dns" };
+  } catch(e) {
+    return { status: "unknown", method: "none" };
+  }
 }
 
 function showToast(msg) { const t=$('toast'); t.textContent=msg; t.classList.add('visible'); setTimeout(()=>t.classList.remove('visible'),2000); }
@@ -802,7 +844,7 @@ $('checkBtn').addEventListener('click', async () => {
     const c = document.createElement('div'); $('resultsContainer').appendChild(c); groups[cat]=c;
   }
 
-  let checked=0, availCount=0; const availDomains=[];
+  let checked=0, availCount=0, maybeCount=0; const availDomains=[], maybeDomains=[];
   const CONCURRENCY = 6;
 
   async function processOne(item) {
@@ -811,17 +853,19 @@ $('checkBtn').addEventListener('click', async () => {
     if(groups[item.category]) groups[item.category].appendChild(row);
     const result = await checkDomain(item.domain);
     checked++;
-    row.className=`result-row ${result.status}`;
-    const badge = result.status==='available'?'available':result.status==='taken'?'taken':'error';
-    const methodHint = result.method==='dns'?' ~':'';
-    const buyBtn = result.status==='available'
-      ? `<a class="btn-buy" href="https://www.ovh.com/fr/cgi-bin/newOrder/order.cgi?domainChooser=${item.domain}" target="_blank" rel="noopener">Buy</a>`
-      : '';
-    row.querySelector('.result-right').innerHTML = `<span class="result-badge">${badge}${methodHint}</span>${buyBtn}`;
-    if(result.status==='available') { availCount++; availDomains.push(item); }
-    $('statChecked').textContent=checked;
-    $('statAvail').textContent=availCount;
-    $('progressFill').style.width=`${(checked/domains.length*100).toFixed(1)}%`;
+    row.className = `result-row ${result.status}`;
+    const badgeLabels = { available:'available', taken:'taken', maybe:'unverified', error:'error', unknown:'unknown' };
+    const badge = badgeLabels[result.status] || result.status;
+    const ovhUrl = `https://www.ovhcloud.com/fr/order/webcloud/#/webCloud/domain/select?selection=~${item.domain}`;
+    let buyBtn = '';
+    if (result.status === 'available') buyBtn = `<a class="btn-buy" href="${ovhUrl}" target="_blank" rel="noopener">Buy</a>`;
+    else if (result.status === 'maybe') buyBtn = `<a class="btn-buy" href="${ovhUrl}" target="_blank" rel="noopener" style="background:var(--accent-amber)">Check</a>`;
+    row.querySelector('.result-right').innerHTML = `<span class="result-badge">${badge}</span>${buyBtn}`;
+    if (result.status === 'available') { availCount++; availDomains.push(item); }
+    else if (result.status === 'maybe') { maybeCount++; maybeDomains.push(item); }
+    $('statChecked').textContent = checked;
+    $('statAvail').textContent = availCount + (maybeCount ? ` + ${maybeCount}?` : '');
+    $('progressFill').style.width = `${(checked/domains.length*100).toFixed(1)}%`;
   }
 
   let idx=0; const running=new Set();
@@ -837,15 +881,31 @@ $('checkBtn').addEventListener('click', async () => {
     next();
   });
 
-  if (availDomains.length > 0) {
+  if (availDomains.length > 0 || maybeDomains.length > 0) {
     $('summary').classList.add('visible');
-    const byName = {};
-    for (const d of availDomains) { if(!byName[d.name]) byName[d.name]=[]; byName[d.name].push(d.domain); }
+    const ovhLink = d => `https://www.ovhcloud.com/fr/order/webcloud/#/webCloud/domain/select?selection=~${d}`;
     let html = '';
-    for (const [name,doms] of Object.entries(byName).sort()) {
-      html += `<div class="summary-group"><div class="summary-group-name">${name}</div>`;
-      html += `<ul class="summary-list">${doms.map(d=>`<li>${d} <a class="btn-buy" href="https://www.ovh.com/fr/cgi-bin/newOrder/order.cgi?domainChooser=${d}" target="_blank" rel="noopener">Buy</a></li>`).join('')}</ul></div>`;
+
+    if (availDomains.length > 0) {
+      const byName = {};
+      for (const d of availDomains) { if(!byName[d.name]) byName[d.name]=[]; byName[d.name].push(d.domain); }
+      html += `<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--accent-green);margin-bottom:8px;">Confirmed available (RDAP)</div>`;
+      for (const [name,doms] of Object.entries(byName).sort()) {
+        html += `<div class="summary-group"><div class="summary-group-name">${name}</div>`;
+        html += `<ul class="summary-list">${doms.map(d=>`<li>${d} <a class="btn-buy" href="${ovhLink(d)}" target="_blank" rel="noopener">Buy</a></li>`).join('')}</ul></div>`;
+      }
     }
+
+    if (maybeDomains.length > 0) {
+      const byName = {};
+      for (const d of maybeDomains) { if(!byName[d.name]) byName[d.name]=[]; byName[d.name].push(d.domain); }
+      html += `<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--accent-amber);margin:16px 0 8px;">Unverified — check on registrar</div>`;
+      for (const [name,doms] of Object.entries(byName).sort()) {
+        html += `<div class="summary-group"><div class="summary-group-name">${name}</div>`;
+        html += `<ul class="summary-list">${doms.map(d=>`<li style="color:var(--accent-amber)">${d} <a class="btn-buy" href="${ovhLink(d)}" target="_blank" rel="noopener" style="background:var(--accent-amber)">Check</a></li>`).join('')}</ul></div>`;
+      }
+    }
+
     $('summaryContent').innerHTML = html;
   }
 
