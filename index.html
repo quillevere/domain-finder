@@ -385,14 +385,59 @@
 
 <!-- TABS -->
 <div class="tabs">
-  <button class="tab active" data-tab="generate">Generate</button>
-  <button class="tab" data-tab="silver">Silver Bullet</button>
-  <button class="tab" data-tab="manual">Manual</button>
-  <button class="tab" data-tab="library">Library <span class="fav-count" id="favCountBadge"></span></button>
+  <button class="tab active" data-tab="check">🔍 Check</button>
+  <button class="tab" data-tab="hunt">🎯 Hunt</button>
+  <button class="tab" data-tab="ideas">✨ Ideas</button>
+  <button class="tab" data-tab="batch">📋 Batch</button>
+  <button class="tab" data-tab="saved">⭐ Saved <span class="fav-count" id="favCountBadge"></span></button>
 </div>
 
-<!-- GENERATE PANEL -->
-<div class="panel active" id="panel-generate">
+<!-- CHECK PANEL (single domain) -->
+<div class="panel active" id="panel-check">
+  <div class="section">
+    <div class="section-label">Domain name</div>
+    <input type="text" class="input-field" id="singleDomainInput" placeholder="curiosity, reelm, quaero..." spellcheck="false">
+  </div>
+</div>
+
+<!-- HUNT PANEL (ex Silver Bullet) -->
+<div class="panel" id="panel-hunt">
+  <div class="section">
+    <div class="section-label">Theme</div>
+    <input type="text" class="input-field" id="silverTheme" placeholder="curiosity, exploration, memory...">
+  </div>
+  <div class="section">
+    <div class="section-label">Available domains to find</div>
+    <input type="number" class="input-field input-sm" id="silverTarget" value="10" min="1" max="50" style="width:100%">
+  </div>
+  <div class="section">
+    <div class="section-label">Name length <span style="color:var(--text-tertiary);font-weight:400">(without extension)</span></div>
+    <div class="input-row">
+      <input type="number" class="input-field input-sm" id="silverMinLen" value="4" min="2" max="20" style="width:100%">
+      <span style="color:var(--text-tertiary);font-size:13px;padding:0 4px;">to</span>
+      <input type="number" class="input-field input-sm" id="silverMaxLen" value="10" min="2" max="20" style="width:100%">
+      <span style="color:var(--text-tertiary);font-size:13px;white-space:nowrap;padding-left:4px;">chars</span>
+    </div>
+    <div class="toggle-row" style="margin-top:8px;">
+      <div class="toggle" id="silverRealWords"></div>
+      <span class="toggle-label">Real words only (no invented names)</span>
+    </div>
+  </div>
+  <div class="section">
+    <button class="btn-primary" id="silverBtn">Find available domains</button>
+  </div>
+  <div id="silverResults" style="display:none;">
+    <div class="progress-bar"><div class="progress-fill" id="silverProgress"></div></div>
+    <div class="stats-row">
+      <span class="stat stat-available"><strong id="silverFound">0</strong> / <span id="silverGoal">10</span> found</span>
+      <span class="stat"><strong id="silverTried">0</strong> names tried</span>
+    </div>
+    <div id="silverList"></div>
+  </div>
+</div>
+
+<!-- IDEAS PANEL (ex Generate) -->
+<div class="panel" id="panel-ideas">
   <div class="section">
     <div class="section-label">Theme</div>
     <div class="input-row">
@@ -431,52 +476,16 @@
   </div>
 </div>
 
-<!-- SILVER BULLET PANEL -->
-<div class="panel" id="panel-silver">
-  <div class="section">
-    <div class="section-label">Theme</div>
-    <input type="text" class="input-field" id="silverTheme" placeholder="curiosity, exploration, memory...">
-  </div>
-  <div class="section">
-    <div class="section-label">Available domains to find</div>
-    <input type="number" class="input-field input-sm" id="silverTarget" value="10" min="1" max="50" style="width:100%">
-  </div>
-  <div class="section">
-    <div class="section-label">Name length <span style="color:var(--text-tertiary);font-weight:400">(without extension)</span></div>
-    <div class="input-row">
-      <input type="number" class="input-field input-sm" id="silverMinLen" value="4" min="2" max="20" style="width:100%">
-      <span style="color:var(--text-tertiary);font-size:13px;padding:0 4px;">to</span>
-      <input type="number" class="input-field input-sm" id="silverMaxLen" value="10" min="2" max="20" style="width:100%">
-      <span style="color:var(--text-tertiary);font-size:13px;white-space:nowrap;padding-left:4px;">chars</span>
-    </div>
-    <div class="toggle-row" style="margin-top:8px;">
-      <div class="toggle" id="silverRealWords"></div>
-      <span class="toggle-label">Real words only (no invented names)</span>
-    </div>
-  </div>
-  <div class="section">
-    <button class="btn-primary" id="silverBtn">Find available domains</button>
-  </div>
-  <div id="silverResults" style="display:none;">
-    <div class="progress-bar"><div class="progress-fill" id="silverProgress"></div></div>
-    <div class="stats-row">
-      <span class="stat stat-available"><strong id="silverFound">0</strong> / <span id="silverGoal">10</span> found</span>
-      <span class="stat"><strong id="silverTried">0</strong> names tried</span>
-    </div>
-    <div id="silverList"></div>
-  </div>
-</div>
-
-<!-- MANUAL PANEL -->
-<div class="panel" id="panel-manual">
+<!-- BATCH PANEL (ex Manual) -->
+<div class="panel" id="panel-batch">
   <div class="section">
     <div class="section-label">Domain names</div>
     <textarea id="namesInput" class="input-area" placeholder="reelm, curioso, wonderly, peekr..." spellcheck="false"></textarea>
   </div>
 </div>
 
-<!-- LIBRARY PANEL -->
-<div class="panel" id="panel-library">
+<!-- SAVED PANEL (ex Library) -->
+<div class="panel" id="panel-saved">
   <div id="favList"></div>
 </div>
 
@@ -678,7 +687,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     tab.classList.add('active');
     $(`panel-${tab.dataset.tab}`).classList.add('active');
-    if (tab.dataset.tab === 'library') renderLibrary();
+    if (tab.dataset.tab === 'saved') renderLibrary();
   });
 });
 
@@ -1075,15 +1084,21 @@ $('checkBtn').addEventListener('click', async () => {
   const activeTab = document.querySelector('.tab.active').dataset.tab;
   let names = [];
 
-  if (activeTab === 'generate') {
+  if (activeTab === 'check') {
+    const raw = $('singleDomainInput').value.trim();
+    if (!raw) return;
+    names = [raw.toLowerCase().replace(/[^a-z0-9-]/g, '')];
+  } else if (activeTab === 'ideas') {
     names = generatedWords.map(w => w.name);
-  } else {
+  } else if (activeTab === 'batch') {
     const raw = $('namesInput').value.trim();
     if (!raw) return;
     names = raw.split(/[,\n]+/).map(n => n.trim().toLowerCase().replace(/[^a-z0-9-]/g, '')).filter(n => n.length > 0);
+  } else {
+    return; // hunt and saved handle their own flow
   }
 
-  if (names.length === 0) { showToast('Add some names first'); return; }
+  if (names.length === 0) { showToast('Add a name first'); return; }
 
   const extensions = [...selectedExts];
   if (extensions.length === 0) { showToast('Select at least one extension'); return; }
