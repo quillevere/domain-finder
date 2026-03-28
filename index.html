@@ -379,7 +379,7 @@
   <h1>Domain Finder</h1>
   <span class="badge">RDAP + Gemini</span>
   <div class="header-right">
-    <button class="btn-secondary" id="settingsBtn" style="padding: 4px 10px; font-size: 12px;">API Key</button>
+    <button class="btn-secondary" id="settingsBtn" style="padding: 4px 10px; font-size: 12px;">⚙ Settings</button>
   </div>
 </div>
 
@@ -542,17 +542,30 @@
 
 <!-- (extension modal removed — replaced by dropdown multi-select) -->
 
-<!-- API KEY MODAL -->
+<!-- SETTINGS MODAL -->
 <div class="modal-overlay" id="apiModalOverlay">
   <div class="modal">
-    <div class="modal-title">Gemini API Key</div>
-    <p style="font-size: 12px; color: var(--text-tertiary); margin-bottom: 12px;">
-      Free, no credit card required. Stored locally in your browser only.
+    <div class="modal-title">Settings</div>
+
+    <div style="font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">Gemini API Key</div>
+    <p style="font-size: 11px; color: var(--text-tertiary); margin-bottom: 8px;">
+      Free, no credit card. Used for Ideas & Hunt tabs.
     </p>
     <input class="modal-input" id="apiKeyInput" placeholder="AIza..." type="password">
-    <div style="font-size: 11px; margin-bottom: 12px;">
-      <a href="https://aistudio.google.com/apikey" target="_blank" style="color: var(--accent-blue); text-decoration: none;">Get a free API key from Google AI Studio &rarr;</a>
+    <div style="font-size: 11px; margin-bottom: 16px;">
+      <a href="https://aistudio.google.com/apikey" target="_blank" style="color: var(--accent-blue); text-decoration: none;">Get a free key from Google AI Studio →</a>
     </div>
+
+    <div style="font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">GitHub Token <span style="font-weight:400;color:var(--text-tertiary);">(sync favorites)</span></div>
+    <p style="font-size: 11px; color: var(--text-tertiary); margin-bottom: 8px;">
+      Syncs your ⭐ Saved domains across devices via a private Gist.
+    </p>
+    <input class="modal-input" id="ghTokenInput" placeholder="ghp_..." type="password">
+    <div style="font-size: 11px; margin-bottom: 8px;">
+      <a href="https://github.com/settings/tokens/new?description=Domain%20Finder%20Sync&scopes=gist" target="_blank" style="color: var(--accent-blue); text-decoration: none;">Create a token with "gist" scope →</a>
+    </div>
+    <div id="syncStatus" style="font-size:11px;color:var(--text-tertiary);margin-bottom:16px;"></div>
+
     <div class="modal-actions">
       <button class="btn-secondary" id="apiModalCancel">Cancel</button>
       <button class="btn-primary" id="apiModalSave" style="width:auto; padding: 8px 20px;">Save</button>
@@ -692,23 +705,118 @@ document.querySelectorAll('.tab').forEach(tab => {
 });
 
 // ═══════════════════════════════════════════════════════
-// API Key management
+// Settings & Keys
 // ═══════════════════════════════════════════════════════
 function getApiKey() { return localStorage.getItem('gemini_api_key') || ''; }
 function setApiKey(k) { localStorage.setItem('gemini_api_key', k); }
+function getGhToken() { return localStorage.getItem('gh_token') || ''; }
+function setGhToken(k) { localStorage.setItem('gh_token', k); }
+function getGistId() { return localStorage.getItem('gist_id') || ''; }
+function setGistId(id) { localStorage.setItem('gist_id', id); }
 
 $('settingsBtn').addEventListener('click', () => {
   $('apiKeyInput').value = getApiKey();
+  $('ghTokenInput').value = getGhToken();
+  const gistId = getGistId();
+  $('syncStatus').innerHTML = getGhToken()
+    ? (gistId ? `✓ Syncing to Gist <a href="https://gist.github.com/${gistId}" target="_blank" style="color:var(--accent-blue);text-decoration:none;">${gistId.slice(0,8)}...</a>` : '✓ Token set, will sync on next save')
+    : 'No token — favorites stored locally only';
   $('apiModalOverlay').classList.add('visible');
-  $('apiKeyInput').focus();
 });
 $('apiModalCancel').addEventListener('click', () => $('apiModalOverlay').classList.remove('visible'));
 $('apiModalOverlay').addEventListener('click', e => { if(e.target===$('apiModalOverlay')) $('apiModalOverlay').classList.remove('visible'); });
-$('apiModalSave').addEventListener('click', () => {
+$('apiModalSave').addEventListener('click', async () => {
   setApiKey($('apiKeyInput').value.trim());
+  const newToken = $('ghTokenInput').value.trim();
+  const oldToken = getGhToken();
+  setGhToken(newToken);
   $('apiModalOverlay').classList.remove('visible');
-  showToast('API key saved');
+
+  // If token was just added/changed, trigger initial sync
+  if (newToken && newToken !== oldToken) {
+    showToast('Syncing favorites...');
+    await gistSync();
+    renderLibrary();
+    showToast('Favorites synced');
+  } else {
+    showToast('Settings saved');
+  }
 });
+
+// ═══════════════════════════════════════════════════════
+// Gist Sync
+// ═══════════════════════════════════════════════════════
+const GIST_FILENAME = 'domain-finder-favorites.json';
+
+async function gistFetch(path, opts = {}) {
+  const token = getGhToken();
+  if (!token) return null;
+  const resp = await fetch(`https://api.github.com${path}`, {
+    ...opts,
+    headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json', ...opts.headers }
+  });
+  if (!resp.ok) return null;
+  return resp.json();
+}
+
+async function gistLoad() {
+  const gistId = getGistId();
+  if (!gistId) return null;
+  const gist = await gistFetch(`/gists/${gistId}`);
+  if (!gist || !gist.files?.[GIST_FILENAME]) return null;
+  try { return JSON.parse(gist.files[GIST_FILENAME].content); }
+  catch { return null; }
+}
+
+async function gistSave(favs) {
+  const gistId = getGistId();
+  const payload = { description: 'Domain Finder — Favorites', public: false,
+    files: { [GIST_FILENAME]: { content: JSON.stringify(favs, null, 2) } } };
+
+  if (gistId) {
+    // Update existing
+    const result = await gistFetch(`/gists/${gistId}`, { method: 'PATCH', body: JSON.stringify(payload) });
+    return !!result;
+  } else {
+    // Create new
+    const result = await gistFetch('/gists', { method: 'POST', body: JSON.stringify(payload) });
+    if (result?.id) { setGistId(result.id); return true; }
+    return false;
+  }
+}
+
+async function gistSync() {
+  const token = getGhToken();
+  if (!token) return;
+
+  // If no gist ID yet, try to find existing gist
+  if (!getGistId()) {
+    const gists = await gistFetch('/gists?per_page=100');
+    if (gists) {
+      const existing = gists.find(g => g.files?.[GIST_FILENAME]);
+      if (existing) setGistId(existing.id);
+    }
+  }
+
+  // Load remote
+  const remote = await gistLoad();
+  const local = getFavorites();
+
+  if (remote && remote.length > 0) {
+    // Merge: union by domain, keep most recent addedAt
+    const map = new Map();
+    for (const f of [...remote, ...local]) {
+      const existing = map.get(f.domain);
+      if (!existing || (f.addedAt || 0) > (existing.addedAt || 0)) map.set(f.domain, f);
+    }
+    const merged = [...map.values()].sort((a,b) => (b.addedAt||0) - (a.addedAt||0));
+    localStorage.setItem('domain_favorites', JSON.stringify(merged));
+    updateFavBadge();
+    await gistSave(merged);
+  } else if (local.length > 0) {
+    await gistSave(local);
+  }
+}
 
 // ═══════════════════════════════════════════════════════
 // Gemini word generation
@@ -902,7 +1010,17 @@ function renderExtOptions(filter = '') {
   const container = $('extOptions');
   const f = filter.toLowerCase();
   const filtered = ALL_EXTENSIONS.filter(e => e.ext.includes(f) || e.desc.toLowerCase().includes(f));
-  container.innerHTML = filtered.map(e => {
+  const allSelected = filtered.length > 0 && filtered.every(e => selectedExts.has(e.ext));
+
+  let html = '';
+  if (!f) {
+    html += `<div class="ext-option${allSelected ? ' selected' : ''}" data-ext-all="true">
+      <span class="check">${allSelected ? '&#10003;' : ''}</span>
+      <span class="ext-label"><strong>Select all</strong></span>
+      <span class="ext-desc">${ALL_EXTENSIONS.length} extensions</span>
+    </div>`;
+  }
+  html += filtered.map(e => {
     const sel = selectedExts.has(e.ext) ? ' selected' : '';
     return `<div class="ext-option${sel}" data-ext="${e.ext}">
       <span class="check">${sel ? '&#10003;' : ''}</span>
@@ -910,20 +1028,36 @@ function renderExtOptions(filter = '') {
       <span class="ext-desc">${e.desc}</span>
     </div>`;
   }).join('');
+  container.innerHTML = html;
+
   container.querySelectorAll('.ext-option').forEach(opt => {
     opt.addEventListener('click', (e) => {
-      e.stopPropagation(); // prevent outside-click handler from closing dropdown
-      const ext = opt.dataset.ext;
-      if (selectedExts.has(ext)) {
-        selectedExts.delete(ext);
-        opt.classList.remove('selected');
-        opt.querySelector('.check').textContent = '';
+      e.stopPropagation();
+      if (opt.dataset.extAll) {
+        if (allSelected) { for (const e of filtered) selectedExts.delete(e.ext); }
+        else { for (const e of filtered) selectedExts.add(e.ext); }
+        renderExtTrigger();
+        renderExtOptions($('extSearch').value);
       } else {
-        selectedExts.add(ext);
-        opt.classList.add('selected');
-        opt.querySelector('.check').innerHTML = '&#10003;';
+        const ext = opt.dataset.ext;
+        if (selectedExts.has(ext)) {
+          selectedExts.delete(ext);
+          opt.classList.remove('selected');
+          opt.querySelector('.check').textContent = '';
+        } else {
+          selectedExts.add(ext);
+          opt.classList.add('selected');
+          opt.querySelector('.check').innerHTML = '&#10003;';
+        }
+        // Update "Select all" state
+        const allOpt = container.querySelector('[data-ext-all]');
+        if (allOpt) {
+          const nowAll = ALL_EXTENSIONS.every(e => selectedExts.has(e.ext));
+          allOpt.classList.toggle('selected', nowAll);
+          allOpt.querySelector('.check').innerHTML = nowAll ? '&#10003;' : '';
+        }
+        renderExtTrigger();
       }
-      renderExtTrigger();
     });
   });
 }
@@ -1248,6 +1382,8 @@ function getFavorites() {
 function saveFavorites(favs) {
   localStorage.setItem('domain_favorites', JSON.stringify(favs));
   updateFavBadge();
+  // Background sync to Gist (fire and forget)
+  if (getGhToken()) gistSave(favs).catch(() => {});
 }
 
 function isFavorite(domain) {
@@ -1304,8 +1440,9 @@ function starButtonHTML(domain, context) {
   return `<button class="btn-star${starred ? ' starred' : ''}" data-domain="${domain}" onclick="toggleFavorite('${domain}','${safeCtx}')">${starred ? '★' : '☆'}</button>`;
 }
 
-// Init badge
+// Init badge + auto-sync on load
 updateFavBadge();
+if (getGhToken()) gistSync().then(() => { updateFavBadge(); }).catch(() => {});
 
 // ═══════════════════════════════════════════════════════
 // Silver Bullet mode
