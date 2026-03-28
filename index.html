@@ -1351,7 +1351,7 @@ $('checkBtn').addEventListener('click', async () => {
       html += `<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--accent-green);margin-bottom:8px;">Confirmed available (RDAP)</div>`;
       for (const [name,doms] of Object.entries(byName).sort()) {
         html += `<div class="summary-group"><div class="summary-group-name">${name}</div>`;
-        html += `<ul class="summary-list">${doms.map(d=>`<li>${d} <a class="btn-buy" href="${ovhLink(d)}" target="_blank" rel="noopener">Buy</a></li>`).join('')}</ul></div>`;
+        html += `<ul class="summary-list">${doms.map(d=>`<li>${d} <a class="btn-buy" href="${ovhLink(d)}" target="_blank" rel="noopener">Buy</a>${starButtonHTML(d,'')}</li>`).join('')}</ul></div>`;
       }
     }
 
@@ -1361,7 +1361,7 @@ $('checkBtn').addEventListener('click', async () => {
       html += `<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--accent-amber);margin:16px 0 8px;">Unverified — check on registrar</div>`;
       for (const [name,doms] of Object.entries(byName).sort()) {
         html += `<div class="summary-group"><div class="summary-group-name">${name}</div>`;
-        html += `<ul class="summary-list">${doms.map(d=>`<li style="color:var(--accent-amber)">${d} <a class="btn-buy" href="${ovhLink(d)}" target="_blank" rel="noopener" style="background:var(--accent-amber)">Check</a></li>`).join('')}</ul></div>`;
+        html += `<ul class="summary-list">${doms.map(d=>`<li style="color:var(--accent-amber)">${d} <a class="btn-buy" href="${ovhLink(d)}" target="_blank" rel="noopener" style="background:var(--accent-amber)">Check</a>${starButtonHTML(d,'')}</li>`).join('')}</ul></div>`;
       }
     }
 
