@@ -1319,7 +1319,7 @@ $('checkBtn').addEventListener('click', async () => {
       buyBtn = `<a class="btn-buy" href="${ovhUrl}" target="_blank" rel="noopener" style="background:var(--accent-amber)">Check</a>`;
       star = starButtonHTML(item.domain, '');
     }
-    row.querySelector('.result-right').innerHTML = `<span class="result-badge">${badge}</span>${buyBtn}${star}`;
+    row.querySelector('.result-right').innerHTML = `${star}<span class="result-badge">${badge}</span>${buyBtn}`;
     if (result.status === 'available') { availCount++; availDomains.push(item); }
     else if (result.status === 'maybe') { maybeCount++; maybeDomains.push(item); }
     $('statChecked').textContent = checked;
@@ -1351,7 +1351,7 @@ $('checkBtn').addEventListener('click', async () => {
       html += `<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--accent-green);margin-bottom:8px;">Confirmed available (RDAP)</div>`;
       for (const [name,doms] of Object.entries(byName).sort()) {
         html += `<div class="summary-group"><div class="summary-group-name">${name}</div>`;
-        html += `<ul class="summary-list">${doms.map(d=>`<li>${d} <a class="btn-buy" href="${ovhLink(d)}" target="_blank" rel="noopener">Buy</a>${starButtonHTML(d,'')}</li>`).join('')}</ul></div>`;
+        html += `<ul class="summary-list">${doms.map(d=>`<li><span>${d}</span><span class="result-right">${starButtonHTML(d,'')}<a class="btn-buy" href="${ovhLink(d)}" target="_blank" rel="noopener">Buy</a></span></li>`).join('')}</ul></div>`;
       }
     }
 
@@ -1361,7 +1361,7 @@ $('checkBtn').addEventListener('click', async () => {
       html += `<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--accent-amber);margin:16px 0 8px;">Unverified — check on registrar</div>`;
       for (const [name,doms] of Object.entries(byName).sort()) {
         html += `<div class="summary-group"><div class="summary-group-name">${name}</div>`;
-        html += `<ul class="summary-list">${doms.map(d=>`<li style="color:var(--accent-amber)">${d} <a class="btn-buy" href="${ovhLink(d)}" target="_blank" rel="noopener" style="background:var(--accent-amber)">Check</a>${starButtonHTML(d,'')}</li>`).join('')}</ul></div>`;
+        html += `<ul class="summary-list">${doms.map(d=>`<li style="color:var(--accent-amber)"><span>${d}</span><span class="result-right">${starButtonHTML(d,'')}<a class="btn-buy" href="${ovhLink(d)}" target="_blank" rel="noopener" style="background:var(--accent-amber)">Check</a></span></li>`).join('')}</ul></div>`;
       }
     }
 
@@ -1566,7 +1566,7 @@ No markdown, no explanation, just the JSON array.`;
         const row = document.createElement('div');
         row.className = 'result-row available';
         row.style.flexWrap = 'wrap';
-        row.innerHTML = `<span class="result-domain">${a.domain}</span><span class="result-right"><span class="result-badge">available</span><a class="btn-buy" href="${porkbunLink(a.domain)}" target="_blank" rel="noopener">Buy</a>${starButtonHTML(a.domain, word.context)}</span>${word.context ? `<span style="width:100%;font-size:11px;color:var(--text-tertiary);padding-left:2px;margin-top:-2px;">${word.context}</span>` : ''}`;
+        row.innerHTML = `<span class="result-domain">${a.domain}</span><span class="result-right">${starButtonHTML(a.domain, word.context)}<span class="result-badge">available</span><a class="btn-buy" href="${porkbunLink(a.domain)}" target="_blank" rel="noopener">Buy</a></span>${word.context ? `<span style="width:100%;font-size:11px;color:var(--text-tertiary);padding-left:2px;margin-top:-2px;">${word.context}</span>` : ''}`;
         $('silverList').appendChild(row);
         $('silverFound').textContent = found.length;
         $('silverProgress').style.width = `${(found.length/target*100).toFixed(0)}%`;
