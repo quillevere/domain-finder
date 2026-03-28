@@ -496,6 +496,15 @@
   <button class="btn-primary" id="checkBtn">Check availability</button>
 </div>
 
+<!-- SUMMARY (above results for readability) -->
+<div class="summary" id="summary">
+  <div class="summary-title">
+    <span>Available domains</span>
+    <button class="btn-secondary" id="copyBtn">Copy</button>
+  </div>
+  <div id="summaryContent"></div>
+</div>
+
 <!-- RESULTS -->
 <div class="results-section" id="resultsSection">
   <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
@@ -505,15 +514,6 @@
   </div>
   <div id="resultsContainer"></div>
   <p style="font-size:10px;color:var(--text-tertiary);margin-top:12px;">Short dictionary words on .app/.dev/.ai may show as available but be reserved as premium by the registry. Always verify on the registrar before purchasing.</p>
-</div>
-
-<!-- SUMMARY -->
-<div class="summary" id="summary">
-  <div class="summary-title">
-    <span>Available domains</span>
-    <button class="btn-secondary" id="copyBtn">Copy</button>
-  </div>
-  <div id="summaryContent"></div>
 </div>
 
 <!-- (extension modal removed — replaced by dropdown multi-select) -->
@@ -887,12 +887,19 @@ function renderExtOptions(filter = '') {
     </div>`;
   }).join('');
   container.querySelectorAll('.ext-option').forEach(opt => {
-    opt.addEventListener('click', () => {
+    opt.addEventListener('click', (e) => {
+      e.stopPropagation(); // prevent outside-click handler from closing dropdown
       const ext = opt.dataset.ext;
-      if (selectedExts.has(ext)) selectedExts.delete(ext);
-      else selectedExts.add(ext);
+      if (selectedExts.has(ext)) {
+        selectedExts.delete(ext);
+        opt.classList.remove('selected');
+        opt.querySelector('.check').textContent = '';
+      } else {
+        selectedExts.add(ext);
+        opt.classList.add('selected');
+        opt.querySelector('.check').innerHTML = '&#10003;';
+      }
       renderExtTrigger();
-      renderExtOptions($('extSearch').value);
     });
   });
 }
