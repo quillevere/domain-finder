@@ -390,7 +390,7 @@
   <button class="tab" data-tab="hunt">🎯 Hunt</button>
   <button class="tab" data-tab="ideas">✨ Ideas</button>
   <button class="tab" data-tab="batch">📋 Batch</button>
-  <button class="tab" data-tab="saved">⭐ Saved <span class="fav-count" id="favCountBadge"></span></button>
+  <button class="tab" data-tab="saved">⭐ Saved <span id="favCountBadge" style="color:var(--accent-amber);font-weight:400;"></span></button>
 </div>
 
 <!-- CHECK PANEL (single domain) -->
@@ -1410,7 +1410,7 @@ function toggleFavorite(domain, context) {
 
 function updateFavBadge() {
   const count = getFavorites().length;
-  $('favCountBadge').textContent = count > 0 ? count : '';
+  $('favCountBadge').textContent = count > 0 ? `(${count})` : '';
 }
 
 function renderLibrary() {
