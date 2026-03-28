@@ -276,6 +276,10 @@
   }
   .btn-buy:hover { opacity: 0.85; }
 
+  /* Affix option help text */
+  .affix-help { font-size: 10px; color: var(--text-tertiary); margin-top: 2px; line-height: 1.3; }
+  .ext-option .ext-label { flex: 1; min-width: 0; }
+
   /* Star / Favorites */
   .btn-star {
     background: none; border: none; cursor: pointer; padding: 4px;
@@ -474,6 +478,17 @@
 <!-- LIBRARY PANEL -->
 <div class="panel" id="panel-library">
   <div id="favList"></div>
+</div>
+
+<!-- PREFIXES / SUFFIXES (shared) -->
+<div class="section">
+  <div class="section-label">Prefixes & Suffixes</div>
+  <div class="ext-select" id="affixSelect">
+    <div class="ext-trigger" id="affixTrigger"><span class="ext-placeholder">Add prefix/suffix groups...</span></div>
+    <div class="ext-dropdown" id="affixDropdown">
+      <div class="ext-options" id="affixOptions"></div>
+    </div>
+  </div>
 </div>
 
 <!-- EXTENSIONS (shared) -->
@@ -921,10 +936,127 @@ document.addEventListener('click', e => {
     $('extDropdown').classList.remove('open');
     $('extTrigger').classList.remove('open');
   }
+  if (!$('affixSelect').contains(e.target)) {
+    $('affixDropdown').classList.remove('open');
+    $('affixTrigger').classList.remove('open');
+  }
 });
 
 // Init
 renderExtTrigger();
+
+// ═══════════════════════════════════════════════════════
+// Prefix / Suffix groups
+// ═══════════════════════════════════════════════════════
+const AFFIX_GROUPS = [
+  { id:'pre-action', label:'Prefixes Action / Invitation', type:'prefix',
+    items:['get','try','use','go','hey','hi','meet','join','run','ask','do'] },
+  { id:'pre-identity', label:'Prefixes Possession / Identité', type:'prefix',
+    items:['my','your','our','the','its'] },
+  { id:'pre-intensity', label:'Prefixes Intensité / Qualité', type:'prefix',
+    items:['super','ultra','mega','hyper','over','true','real','pure','raw'] },
+  { id:'pre-speed', label:'Prefixes Temporalité / Vitesse', type:'prefix',
+    items:['fast','quick','snap','instant','now','ever'] },
+  { id:'pre-size', label:'Prefixes Taille / Simplicité', type:'prefix',
+    items:['tiny','mini','micro','nano','lite','simple','easy','slim'] },
+  { id:'pre-tech', label:'Prefixes Tech / Digital', type:'prefix',
+    items:['open','smart','auto','web','app','dev','api','data','cloud','ai'] },
+  { id:'pre-direction', label:'Prefixes Mouvement / Direction', type:'prefix',
+    items:['up','on','in','re','un','de','be','to'] },
+  { id:'pre-social', label:'Prefixes Social / Together', type:'prefix',
+    items:['we','co','team'] },
+  { id:'suf-tech', label:'Suffixes Tech', type:'suffix',
+    items:['app','hq','ai','dev','api','hub','lab','kit','box','base','stack','cloud','dot','bot'] },
+  { id:'suf-func', label:'Suffixes Fonctionnel', type:'suffix',
+    items:['ly','fy','ify','er','or','ist','ful','able','ment','ness'] },
+  { id:'suf-space', label:'Suffixes Lieu / Espace', type:'suffix',
+    items:['zone','space','land','spot','place','room','nest','den','dock'] },
+  { id:'suf-creative', label:'Suffixes Créatifs / Malin', type:'suffix',
+    items:['so','to','me','it','up','go','now','pro','plus','one','x','os','co'] },
+  { id:'pat-rare', label:'Patterns rares mais efficaces', type:'both',
+    items:['with','and','i','hello','hey','inc','works','craft','flow','wave','path','mind','sight','shift'] },
+];
+
+let selectedAffixGroups = new Set();
+
+function getSelectedAffixes() {
+  const prefixes = new Set(), suffixes = new Set();
+  for (const g of AFFIX_GROUPS) {
+    if (!selectedAffixGroups.has(g.id)) continue;
+    for (const item of g.items) {
+      if (g.type === 'prefix' || g.type === 'both') prefixes.add(item);
+      if (g.type === 'suffix' || g.type === 'both') suffixes.add(item);
+    }
+  }
+  return { prefixes: [...prefixes], suffixes: [...suffixes] };
+}
+
+function renderAffixTrigger() {
+  const trigger = $('affixTrigger');
+  if (selectedAffixGroups.size === 0) {
+    trigger.innerHTML = '<span class="ext-placeholder">Add prefix/suffix groups...</span>';
+  } else {
+    trigger.innerHTML = [...selectedAffixGroups].map(id => {
+      const g = AFFIX_GROUPS.find(g => g.id === id);
+      return `<span class="ext-tag">${g?.label || id}<span class="ext-tag-remove" data-affix="${id}">&times;</span></span>`;
+    }).join('');
+  }
+  trigger.querySelectorAll('.ext-tag-remove').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      selectedAffixGroups.delete(btn.dataset.affix);
+      renderAffixTrigger();
+      renderAffixOptions();
+    });
+  });
+}
+
+function renderAffixOptions() {
+  const container = $('affixOptions');
+  const allSelected = selectedAffixGroups.size === AFFIX_GROUPS.length;
+  let html = `<div class="ext-option${allSelected ? ' selected' : ''}" data-affix-all="true">
+    <span class="check">${allSelected ? '&#10003;' : ''}</span>
+    <span class="ext-label"><strong>Tout sélectionner</strong></span>
+  </div>`;
+  for (const g of AFFIX_GROUPS) {
+    const sel = selectedAffixGroups.has(g.id);
+    html += `<div class="ext-option${sel ? ' selected' : ''}" data-affix="${g.id}">
+      <span class="check">${sel ? '&#10003;' : ''}</span>
+      <span class="ext-label">
+        ${g.label}
+        <div class="affix-help">${g.items.join(', ')}</div>
+      </span>
+    </div>`;
+  }
+  container.innerHTML = html;
+  container.querySelectorAll('.ext-option').forEach(opt => {
+    opt.addEventListener('click', e => {
+      e.stopPropagation();
+      if (opt.dataset.affixAll) {
+        if (selectedAffixGroups.size === AFFIX_GROUPS.length) {
+          selectedAffixGroups.clear();
+        } else {
+          for (const g of AFFIX_GROUPS) selectedAffixGroups.add(g.id);
+        }
+      } else {
+        const id = opt.dataset.affix;
+        if (selectedAffixGroups.has(id)) selectedAffixGroups.delete(id);
+        else selectedAffixGroups.add(id);
+      }
+      renderAffixTrigger();
+      renderAffixOptions();
+    });
+  });
+}
+
+$('affixTrigger').addEventListener('click', () => {
+  const dd = $('affixDropdown');
+  const isOpen = dd.classList.contains('open');
+  if (isOpen) { dd.classList.remove('open'); $('affixTrigger').classList.remove('open'); }
+  else { dd.classList.add('open'); $('affixTrigger').classList.add('open'); renderAffixOptions(); }
+});
+
+renderAffixTrigger();
 
 $('hackToggle').addEventListener('click', function() { this.classList.toggle('active'); });
 $('genRealWords').addEventListener('click', function() { this.classList.toggle('active'); });
@@ -957,16 +1089,38 @@ $('checkBtn').addEventListener('click', async () => {
   if (extensions.length === 0) { showToast('Select at least one extension'); return; }
 
   const hacksEnabled = $('hackToggle').classList.contains('active');
+  const { prefixes, suffixes } = getSelectedAffixes();
   const domains = [], seen = new Set();
 
   for (const name of names) {
+    // Standard: name.ext
     for (const ext of extensions) {
       const d = `${name}${ext}`;
       if (!seen.has(d)) { domains.push({domain:d, name, category:'standard'}); seen.add(d); }
     }
+    // Prefixes: prefixname.ext
+    for (const pre of prefixes) {
+      const combined = `${pre}${name}`;
+      for (const ext of extensions) {
+        const d = `${combined}${ext}`;
+        if (!seen.has(d)) { domains.push({domain:d, name: combined, category:'prefix'}); seen.add(d); }
+      }
+    }
+    // Suffixes: namesuffix.ext
+    for (const suf of suffixes) {
+      const combined = `${name}${suf}`;
+      for (const ext of extensions) {
+        const d = `${combined}${ext}`;
+        if (!seen.has(d)) { domains.push({domain:d, name: combined, category:'suffix'}); seen.add(d); }
+      }
+    }
+    // Domain hacks
     if (hacksEnabled) {
-      for (const h of findHacks(name)) {
-        if (!seen.has(h.domain)) { domains.push({domain:h.domain, name, category:'hack'}); seen.add(h.domain); }
+      const allNames = [name, ...prefixes.map(p => p+name), ...suffixes.map(s => name+s)];
+      for (const n of allNames) {
+        for (const h of findHacks(n)) {
+          if (!seen.has(h.domain)) { domains.push({domain:h.domain, name: n, category:'hack'}); seen.add(h.domain); }
+        }
       }
     }
   }
@@ -983,11 +1137,12 @@ $('checkBtn').addEventListener('click', async () => {
   $('statTotal').textContent = domains.length;
 
   const groups = {};
-  for (const cat of ['standard','hack']) {
+  const catLabels = { standard:'Standard', prefix:'Prefixed', suffix:'Suffixed', hack:'Domain hacks' };
+  for (const cat of ['standard','prefix','suffix','hack']) {
     const items = domains.filter(d=>d.category===cat);
     if (!items.length) continue;
     const h = document.createElement('div'); h.className='result-group-header';
-    h.textContent = cat==='standard'?`Standard (${items.length})`:`Domain hacks (${items.length})`;
+    h.textContent = `${catLabels[cat]} (${items.length})`;
     $('resultsContainer').appendChild(h);
     const c = document.createElement('div'); $('resultsContainer').appendChild(c); groups[cat]=c;
   }
@@ -1235,9 +1390,12 @@ No markdown, no explanation, just the JSON array.`;
       if (found.length >= target) break;
       seenNames.add(word.name);
 
-      const domainsToCheck = extensions.map(ext => `${word.name}${ext}`);
-      if (hacksEnabled) {
-        for (const h of findHacks(word.name)) domainsToCheck.push(h.domain);
+      const { prefixes: sPre, suffixes: sSuf } = getSelectedAffixes();
+      const allVariants = [word.name, ...sPre.map(p => p+word.name), ...sSuf.map(s => word.name+s)];
+      const domainsToCheck = [];
+      for (const v of allVariants) {
+        for (const ext of extensions) domainsToCheck.push(v + ext);
+        if (hacksEnabled) for (const h of findHacks(v)) domainsToCheck.push(h.domain);
       }
 
       const results = await Promise.all(domainsToCheck.map(async d => {
